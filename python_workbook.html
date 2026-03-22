@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyLearn — Python × AI/ML Interactive Workbook</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Fraunces:ital,wght@0,300;0,600;0,900;1,300;1,600&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#07080f;--surf:#0f1019;--surf2:#161722;--surf3:#1e1f2e;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
+  --a1:#6c63ff;--a2:#00f5c4;--a3:#ff6b9d;--a4:#fbbf24;--a5:#38bdf8;
+  --text:#dde1f0;--muted:#5a5d7a;--code:#0b0c15;
+  --green:#22c55e;--red:#ef4444;--yellow:#f59e0b;
+  --font-display:'Fraunces',serif;
+  --font-body:'Cabinet Grotesk',sans-serif;
+  --font-code:'JetBrains Mono',monospace;
+  --sidebar:260px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.7;overflow-x:hidden;}
+
+/* NOISE */
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9998;}
+
+/* ═══ SIDEBAR ═══ */
+#sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:var(--sidebar);
+  background:var(--surf);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:500;
+  transition:transform 0.3s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+.sb-brand{
+  padding:22px 20px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.sb-logo{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--a1),var(--a2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+}
+.sb-title{font-family:var(--font-display);font-weight:900;font-size:17px;line-height:1.1;}
+.sb-sub{font-size:10px;color:var(--muted);font-family:var(--font-code);letter-spacing:0.08em;}
+
+.sb-scroll{flex:1;overflow-y:auto;padding:12px 0;}
+.sb-scroll::-webkit-scrollbar{width:3px;}
+.sb-scroll::-webkit-scrollbar-track{background:transparent;}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+.sb-section{padding:8px 16px 4px;font-size:10px;color:var(--muted);font-family:var(--font-code);letter-spacing:0.12em;text-transform:uppercase;}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 16px;text-decoration:none;
+  color:var(--muted);font-size:13px;font-weight:500;
+  border-left:2px solid transparent;
+  transition:all 0.2s;cursor:pointer;white-space:nowrap;
+}
+.sb-item:hover{color:var(--text);background:rgba(108,99,255,0.06);border-left-color:rgba(108,99,255,0.4);}
+.sb-item.active{color:var(--a1);background:rgba(108,99,255,0.1);border-left-color:var(--a1);}
+.sb-item .ic{width:20px;text-align:center;font-size:14px;flex-shrink:0;}
+.sb-badge{
+  margin-left:auto;padding:2px 7px;border-radius:100px;
+  font-size:10px;font-family:var(--font-code);background:rgba(108,99,255,0.12);
+  color:var(--a1);border:1px solid rgba(108,99,255,0.2);
+}
+.sb-badge.new{background:rgba(0,245,196,0.1);color:var(--a2);border-color:rgba(0,245,196,0.2);}
+
+/* ═══ PROGRESS ═══ */
+#prog-bar{position:fixed;top:0;left:var(--sidebar);right:0;height:2px;background:rgba(255,255,255,0.03);z-index:600;}
+#prog-fill{height:100%;background:linear-gradient(90deg,var(--a1),var(--a2),var(--a3));width:0%;transition:width 0.15s;}
+
+/* ═══ TOPBAR ═══ */
+.topbar{
+  position:fixed;top:0;left:var(--sidebar);right:0;height:52px;
+  background:rgba(7,8,15,0.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);z-index:400;
+  display:flex;align-items:center;padding:0 32px;gap:16px;
+}
+.topbar-title{font-family:var(--font-code);font-size:12px;color:var(--muted);}
+.topbar-title span{color:var(--a2);}
+.topbar-spacer{flex:1;}
+.topbar-pill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(0,245,196,0.07);border:1px solid rgba(0,245,196,0.15);
+  padding:5px 12px;border-radius:100px;font-size:11px;
+  color:var(--a2);font-family:var(--font-code);
+}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--a2);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+#hamburger{display:none;background:none;border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;cursor:pointer;font-size:14px;}
+
+/* ═══ MAIN ═══ */
+.main{margin-left:var(--sidebar);padding-top:52px;}
+
+/* ═══ HERO ═══ */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  justify-content:center;padding:80px 64px;
+  position:relative;overflow:hidden;
+}
+.hero-mesh{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 30%, rgba(108,99,255,0.12), transparent),
+    radial-gradient(ellipse 40% 40% at 20% 80%, rgba(0,245,196,0.07), transparent),
+    radial-gradient(ellipse 30% 40% at 60% 70%, rgba(255,107,157,0.06), transparent);
+  pointer-events:none;
+}
+.hero-grid-lines{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(108,99,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,0.04) 1px,transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black,transparent);
+}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:5px 14px;border-radius:100px;margin-bottom:28px;width:fit-content;
+  background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.25);
+  font-size:11px;font-family:var(--font-code);color:var(--a1);letter-spacing:0.08em;
+  animation:fadeUp 0.5s ease both;
+}
+.hero h1{
+  font-family:var(--font-display);font-weight:900;
+  font-size:clamp(52px,7vw,96px);line-height:0.95;letter-spacing:-0.03em;
+  margin-bottom:24px;animation:fadeUp 0.5s 0.1s ease both;
+}
+.hero h1 em{font-style:italic;color:var(--a2);}
+.hero-desc{
+  font-size:17px;color:var(--muted);max-width:520px;
+  margin-bottom:40px;animation:fadeUp 0.5s 0.2s ease both;font-weight:400;
+}
+.hero-chips{display:flex;flex-wrap:wrap;gap:10px;animation:fadeUp 0.5s 0.3s ease both;}
+.chip{
+  padding:7px 16px;border-radius:100px;font-size:12px;font-weight:700;
+  font-family:var(--font-code);border:1px solid var(--border2);
+  background:var(--surf2);cursor:pointer;transition:all 0.2s;
+}
+.chip:hover{transform:translateY(-2px);border-color:var(--a1);color:var(--a1);}
+
+.hero-stats{
+  position:absolute;right:64px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:20px;
+  animation:fadeUp 0.5s 0.4s ease both;
+}
+.hstat{text-align:center;padding:20px;background:var(--surf);border:1px solid var(--border);border-radius:16px;min-width:90px;}
+.hstat-n{font-family:var(--font-display);font-size:32px;font-weight:900;color:var(--a2);}
+.hstat-l{font-size:10px;color:var(--muted);font-family:var(--font-code);text-transform:uppercase;letter-spacing:0.1em;}
+
+/* ═══ SECTION ═══ */
+.section{padding:72px 64px;border-top:1px solid var(--border);position:relative;}
+.section-eyebrow{
+  display:flex;align-items:center;gap:12px;margin-bottom:16px;
+}
+.sec-num{font-family:var(--font-code);font-size:10px;color:var(--muted);letter-spacing:0.12em;}
+.sec-tag{
+  padding:3px 10px;border-radius:4px;font-size:10px;font-family:var(--font-code);
+  background:rgba(108,99,255,0.1);color:var(--a1);border:1px solid rgba(108,99,255,0.2);
+  text-transform:uppercase;letter-spacing:0.1em;
+}
+.sec-tag.green{background:rgba(34,197,94,0.08);color:var(--green);border-color:rgba(34,197,94,0.2);}
+.sec-tag.cyan{background:rgba(56,189,248,0.08);color:var(--a5);border-color:rgba(56,189,248,0.2);}
+.sec-tag.pink{background:rgba(255,107,157,0.08);color:var(--a3);border-color:rgba(255,107,157,0.2);}
+.sec-tag.yellow{background:rgba(251,191,36,0.08);color:var(--a4);border-color:rgba(251,191,36,0.2);}
+.sec-tag.teal{background:rgba(0,245,196,0.08);color:var(--a2);border-color:rgba(0,245,196,0.2);}
+.section h2{
+  font-family:var(--font-display);font-weight:900;
+  font-size:clamp(28px,3.5vw,46px);line-height:1.05;letter-spacing:-0.02em;margin-bottom:8px;
+}
+.section h2 em{font-style:italic;color:var(--a2);}
+.sec-intro{font-size:15px;color:var(--muted);max-width:600px;margin-bottom:40px;line-height:1.75;}
+
+/* ═══ TEACHER CALLOUT ═══ */
+.teacher{
+  display:flex;gap:16px;align-items:flex-start;
+  background:var(--surf2);border:1px solid var(--border);border-left:3px solid var(--a1);
+  border-radius:0 12px 12px 0;padding:20px 24px;margin-bottom:28px;
+}
+.t-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--a1),var(--a2));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.t-name{font-weight:700;font-size:13px;margin-bottom:2px;}
+.t-role{font-size:10px;color:var(--a2);font-family:var(--font-code);margin-bottom:8px;}
+.t-speech{font-size:14px;color:var(--muted);font-style:italic;line-height:1.65;}
+.t-speech strong{color:var(--text);font-style:normal;}
+
+/* ═══ CODE BLOCK ═══ */
+.codeblock{background:var(--code);border:1px solid rgba(108,99,255,0.18);border-radius:12px;overflow:hidden;margin-bottom:20px;font-family:var(--font-code);}
+.cb-head{display:flex;align-items:center;padding:10px 16px;background:rgba(108,99,255,0.06);border-bottom:1px solid rgba(108,99,255,0.12);gap:10px;}
+.cb-dots{display:flex;gap:5px;}
+.cb-dot{width:10px;height:10px;border-radius:50%;}
+.cb-dot:nth-child(1){background:#ff5f57;}
+.cb-dot:nth-child(2){background:#febc2e;}
+.cb-dot:nth-child(3){background:#28c840;}
+.cb-lang{font-size:10px;color:var(--a1);letter-spacing:0.1em;text-transform:uppercase;margin-left:4px;}
+.cb-file{font-size:10px;color:var(--muted);margin-left:auto;margin-right:8px;}
+.cb-copy{background:none;border:1px solid var(--border2);color:var(--muted);padding:3px 9px;border-radius:5px;font-size:10px;cursor:pointer;font-family:var(--font-code);transition:all 0.2s;}
+.cb-copy:hover{border-color:var(--a2);color:var(--a2);}
+.cb-body{padding:20px 22px;font-size:12.5px;line-height:1.9;overflow-x:auto;}
+.cb-body pre{white-space:pre;}
+
+/* syntax */
+.kw{color:#c792ea;}.fn{color:#82aaff;}.str{color:#c3e88d;}.num{color:#f78c6c;}
+.cm{color:#4a5568;font-style:italic;}.op{color:var(--a2);}.cls{color:#ffcb6b;}.dec{color:var(--a3);}
+
+/* ═══ QUIZ ═══ */
+.quiz{background:linear-gradient(135deg,rgba(108,99,255,0.06),rgba(0,245,196,0.03));border:1px solid rgba(108,99,255,0.2);border-radius:14px;padding:24px;margin-bottom:20px;}
+.quiz-label{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:100px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);color:var(--a4);font-size:10px;font-family:var(--font-code);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:14px;}
+.quiz-q{font-family:var(--font-display);font-weight:600;font-size:17px;margin-bottom:18px;line-height:1.4;}
+.quiz-opts{display:flex;flex-direction:column;gap:8px;}
+.qopt{display:flex;align-items:center;gap:12px;background:var(--surf2);border:1px solid var(--border);border-radius:9px;padding:11px 16px;cursor:pointer;font-size:13px;transition:all 0.2s;user-select:none;}
+.qopt-l{width:24px;height:24px;border-radius:6px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-family:var(--font-code);font-size:10px;flex-shrink:0;transition:all 0.2s;}
+.qopt:hover{border-color:rgba(108,99,255,0.35);background:rgba(108,99,255,0.06);}
+.qopt:hover .qopt-l{background:var(--a1);color:#fff;}
+.qopt.correct{border-color:var(--green);background:rgba(34,197,94,0.07);}
+.qopt.correct .qopt-l{background:var(--green);color:#000;}
+.qopt.wrong{border-color:var(--red);background:rgba(239,68,68,0.07);}
+.qopt.wrong .qopt-l{background:var(--red);color:#fff;}
+.quiz-fb{margin-top:14px;padding:12px 16px;border-radius:9px;font-size:13px;display:none;line-height:1.6;}
+.quiz-fb.show{display:block;}
+.quiz-fb.ok{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:var(--green);}
+.quiz-fb.no{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:var(--red);}
+
+/* ═══ ACTIVITY ═══ */
+.activity{background:rgba(251,191,36,0.03);border:1px solid rgba(251,191,36,0.18);border-radius:14px;padding:24px;margin-bottom:20px;}
+.act-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.act-icon{font-size:22px;}
+.act-title{font-family:var(--font-display);font-weight:700;font-size:17px;}
+.act-badge{margin-left:auto;padding:3px 10px;border-radius:100px;font-size:10px;font-family:var(--font-code);background:rgba(251,191,36,0.1);color:var(--a4);border:1px solid rgba(251,191,36,0.25);}
+.act-body{font-size:14px;color:var(--muted);line-height:1.75;}
+.act-body strong{color:var(--text);}
+
+/* ═══ CALLOUT ═══ */
+.callout{display:flex;gap:14px;background:rgba(0,245,196,0.04);border-left:3px solid var(--a2);border-radius:0 10px 10px 0;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--muted);line-height:1.7;}
+.callout-i{font-size:16px;flex-shrink:0;margin-top:1px;}
+.callout strong{color:var(--a2);}
+.callout.warn{background:rgba(251,191,36,0.04);border-left-color:var(--a4);}
+.callout.warn strong{color:var(--a4);}
+
+/* ═══ INFO GRID ═══ */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:28px;}
+.info-card{background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:22px;transition:transform 0.25s,border-color 0.25s;}
+.info-card:hover{transform:translateY(-3px);border-color:rgba(108,99,255,0.3);}
+.info-card-icon{font-size:28px;margin-bottom:12px;}
+.info-card-title{font-family:var(--font-display);font-weight:700;font-size:16px;margin-bottom:6px;}
+.info-card-body{font-size:13px;color:var(--muted);line-height:1.65;}
+
+/* ═══ TABLE ═══ */
+.tbl-wrap{overflow-x:auto;margin-bottom:24px;border-radius:10px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{background:rgba(108,99,255,0.08);padding:10px 16px;text-align:left;font-family:var(--font-code);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);border-bottom:1px solid var(--border);}
+td{padding:10px 16px;border-bottom:1px solid var(--border);color:var(--muted);}
+td:first-child{color:var(--a2);font-family:var(--font-code);font-size:12px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(108,99,255,0.03);}
+
+/* ═══ REVEAL Q ═══ */
+.rq{background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:14px;}
+.rq-num{font-family:var(--font-code);font-size:10px;color:var(--a1);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.1em;}
+.rq-q{font-family:var(--font-display);font-weight:600;font-size:15px;margin-bottom:14px;line-height:1.4;}
+.rq-btn{background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.25);color:var(--a1);padding:7px 16px;border-radius:7px;font-size:12px;cursor:pointer;font-family:var(--font-body);transition:all 0.2s;}
+.rq-btn:hover{background:rgba(108,99,255,0.2);}
+.rq-ans{margin-top:12px;padding:12px 16px;background:rgba(0,245,196,0.05);border:1px solid rgba(0,245,196,0.15);border-radius:8px;font-size:13px;color:var(--a2);display:none;line-height:1.65;}
+.rq-ans.show{display:block;}
+
+/* ═══ SUMMARY GRID ═══ */
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:32px;}
+.sum-item{background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:18px;display:flex;gap:12px;}
+.sum-n{font-family:var(--font-code);font-size:10px;color:var(--a1);opacity:0.5;min-width:22px;padding-top:2px;}
+.sum-t strong{display:block;font-weight:700;font-size:14px;margin-bottom:3px;}
+.sum-t span{font-size:12px;color:var(--muted);}
+
+/* ═══ NOTEBOOK / SANDBOX ═══ */
+.notebook{
+  background:var(--surf);border:1px solid var(--border);border-radius:16px;
+  overflow:hidden;margin-bottom:28px;
+}
+.nb-topbar{
+  display:flex;align-items:center;gap:12px;padding:12px 18px;
+  background:rgba(108,99,255,0.05);border-bottom:1px solid var(--border);
+}
+.nb-dots{display:flex;gap:5px;}
+.nb-dot{width:10px;height:10px;border-radius:50%;}
+.nb-dot:nth-child(1){background:#ff5f57;}
+.nb-dot:nth-child(2){background:#febc2e;}
+.nb-dot:nth-child(3){background:#28c840;}
+.nb-title{font-family:var(--font-code);font-size:11px;color:var(--muted);}
+.nb-badge{margin-left:auto;padding:3px 9px;border-radius:100px;font-size:10px;font-family:var(--font-code);background:rgba(0,245,196,0.08);color:var(--a2);border:1px solid rgba(0,245,196,0.2);}
+
+.nb-cells{padding:0;}
+.nb-cell{border-bottom:1px solid var(--border);}
+.nb-cell:last-child{border-bottom:none;}
+
+.nb-cell-head{
+  display:flex;align-items:center;gap:10px;padding:10px 18px 6px;
+}
+.cell-num{font-family:var(--font-code);font-size:10px;color:var(--muted);min-width:40px;}
+.cell-type-badge{padding:2px 8px;border-radius:4px;font-size:9px;font-family:var(--font-code);text-transform:uppercase;letter-spacing:0.08em;}
+.ctb-code{background:rgba(108,99,255,0.1);color:var(--a1);}
+.ctb-md{background:rgba(56,189,248,0.1);color:var(--a5);}
+
+.nb-editor{
+  background:var(--code);margin:0 18px 10px;
+  border:1px solid var(--border);border-radius:8px;
+  overflow:hidden;
+}
+.nb-textarea{
+  width:100%;min-height:80px;max-height:400px;
+  background:var(--code);color:var(--text);
+  border:none;outline:none;resize:none;
+  padding:14px 16px;font-family:var(--font-code);font-size:12.5px;line-height:1.8;
+  tab-size:4;
+}
+.nb-run-row{display:flex;align-items:center;gap:8px;padding:8px 18px 14px;}
+.nb-run{
+  display:flex;align-items:center;gap:6px;
+  background:var(--a1);color:#fff;border:none;
+  padding:7px 18px;border-radius:8px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:var(--font-body);transition:all 0.2s;
+}
+.nb-run:hover{background:#5a52e0;transform:translateY(-1px);}
+.nb-run:active{transform:translateY(0);}
+.nb-run.running{background:rgba(108,99,255,0.3);pointer-events:none;}
+.nb-clear{background:none;border:1px solid var(--border);color:var(--muted);padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--font-body);transition:all 0.2s;}
+.nb-clear:hover{border-color:var(--red);color:var(--red);}
+.nb-hint{font-size:11px;color:var(--muted);font-family:var(--font-code);}
+.nb-hint span{color:var(--a4);}
+.nb-output{
+  margin:0 18px 14px;background:rgba(0,0,0,0.4);
+  border:1px solid var(--border);border-radius:8px;
+  padding:14px 16px;font-family:var(--font-code);font-size:12px;line-height:1.8;
+  min-height:40px;display:none;white-space:pre-wrap;word-break:break-all;
+}
+.nb-output.show{display:block;}
+.out-line{display:flex;gap:8px;}
+.out-prefix{color:var(--muted);user-select:none;}
+.out-val{color:var(--a2);}
+.out-err{color:var(--red);}
+.out-warn{color:var(--a4);}
+.out-info{color:var(--a5);}
+
+/* Chart canvas in notebook */
+.nb-chart-wrap{margin:0 18px 14px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:16px;display:none;}
+.nb-chart-wrap.show{display:block;}
+
+/* ═══ MAIN SANDBOX ═══ */
+.sandbox-section{background:var(--surf);border:1px solid var(--a1);border-radius:20px;overflow:hidden;margin:0 64px 40px;}
+.sb-sec-head{padding:20px 28px;background:rgba(108,99,255,0.06);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;}
+.sb-sec-head h3{font-family:var(--font-display);font-weight:900;font-size:22px;}
+.sb-sec-badge{padding:4px 12px;border-radius:100px;background:rgba(0,245,196,0.1);border:1px solid rgba(0,245,196,0.2);color:var(--a2);font-size:11px;font-family:var(--font-code);}
+.sb-sec-body{padding:28px;}
+.sandbox-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.stab{
+  padding:7px 16px;border-radius:8px;font-size:12px;font-weight:700;
+  background:var(--surf2);border:1px solid var(--border);
+  color:var(--muted);cursor:pointer;transition:all 0.2s;font-family:var(--font-body);
+}
+.stab:hover{border-color:var(--a1);color:var(--a1);}
+.stab.active{background:var(--a1);color:#fff;border-color:var(--a1);}
+.stab-panel{display:none;}
+.stab-panel.active{display:block;}
+
+/* ═══ CHART DEMOS ═══ */
+.chart-demo{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px;}
+.chart-demo canvas{max-height:280px;}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity 0.55s ease,transform 0.55s ease;}
+.reveal.in{opacity:1;transform:translateY(0);}
+
+/* ═══ FOOTER ═══ */
+.footer{padding:40px 64px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;}
+.ft-brand{font-family:var(--font-display);font-weight:900;font-size:22px;}
+.ft-brand em{font-style:italic;color:var(--a2);}
+.ft-note{font-size:12px;color:var(--muted);font-family:var(--font-code);}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:1100px){
+  .hero-stats{display:none;}
+}
+@media(max-width:860px){
+  :root{--sidebar:0px;}
+  #sidebar{transform:translateX(-260px);width:260px;}
+  #sidebar.open{transform:translateX(0);}
+  .main{margin-left:0;}
+  #prog-bar{left:0;}
+  .topbar{left:0;}
+  #hamburger{display:block;}
+  .hero{padding:60px 28px;}
+  .section{padding:56px 28px;}
+  .sandbox-section{margin:0 28px 40px;}
+  .footer{padding:40px 28px;}
+}
+@media(max-width:600px){
+  .hero h1{font-size:44px;}
+  .info-grid{grid-template-columns:1fr;}
+  .sum-grid{grid-template-columns:1fr;}
+}
+
+/* Divider */
+.divider{height:1px;background:var(--border);margin:32px 0;}
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<nav id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">🐍</div>
+    <div><div class="sb-title">PyLearn</div><div class="sb-sub">AI/ML Workbook</div></div>
+  </div>
+  <div class="sb-scroll">
+    <div class="sb-section">Foundation</div>
+    <a class="sb-item active" href="#hero"><span class="ic">🏠</span>Home</a>
+    <a class="sb-item" href="#s-vars"><span class="ic">📦</span>Variables & Types</a>
+    <a class="sb-item" href="#s-io"><span class="ic">💬</span>Input / Output</a>
+    <a class="sb-item" href="#s-cond"><span class="ic">🔀</span>Conditionals</a>
+    <a class="sb-item" href="#s-loops"><span class="ic">🔁</span>Loops</a>
+    <a class="sb-item" href="#s-func"><span class="ic">⚡</span>Functions</a>
+
+    <div class="sb-section">Data & Structure</div>
+    <a class="sb-item" href="#s-ds"><span class="ic">🗃️</span>Data Structures<span class="sb-badge">New</span></a>
+    <a class="sb-item" href="#s-files"><span class="ic">📁</span>File Handling<span class="sb-badge">New</span></a>
+
+    <div class="sb-section">Modules</div>
+    <a class="sb-item" href="#s-builtin"><span class="ic">🔧</span>Built-in Modules<span class="sb-badge">New</span></a>
+    <a class="sb-item" href="#s-usermod"><span class="ic">📦</span>User Modules<span class="sb-badge">New</span></a>
+
+    <div class="sb-section">AI / ML Libraries</div>
+    <a class="sb-item" href="#s-numpy"><span class="ic">🔢</span>NumPy<span class="sb-badge new">Lab</span></a>
+    <a class="sb-item" href="#s-pandas"><span class="ic">🐼</span>Pandas<span class="sb-badge new">Lab</span></a>
+    <a class="sb-item" href="#s-matplotlib"><span class="ic">📊</span>Matplotlib<span class="sb-badge new">Lab</span></a>
+    <a class="sb-item" href="#s-aiml"><span class="ic">🧠</span>AI & ML Concepts</a>
+
+    <div class="sb-section">Practice</div>
+    <a class="sb-item" href="#s-sandbox"><span class="ic">🧪</span>Live Sandbox<span class="sb-badge new">▶ Run</span></a>
+    <a class="sb-item" href="#s-summary"><span class="ic">✅</span>Summary & Quiz</a>
+  </div>
+</nav>
+
+<!-- Progress + Topbar -->
+<div id="prog-bar"><div id="prog-fill"></div></div>
+<div class="topbar">
+  <button id="hamburger" onclick="toggleSidebar()">☰</button>
+  <span class="topbar-title">PyLearn / <span>AI & DS Semester 2</span></span>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-pill"><span class="pulse-dot"></span>Live Session Active</div>
+</div>
+
+<main class="main">
+
+<!-- ═══ HERO ═══ -->
+<section class="hero" id="hero">
+  <div class="hero-mesh"></div>
+  <div class="hero-grid-lines"></div>
+  <div class="hero-eyebrow"><span class="pulse-dot"></span>&nbsp;AI & DS — Semester 2 — Interactive Workbook</div>
+  <h1>Python<br><em>Workbook</em><br>× AI/ML</h1>
+  <p class="hero-desc">Your complete interactive guide — learn Python fundamentals, explore AI/ML libraries, and run real code in the built-in notebook. No installation needed.</p>
+  <div class="hero-chips">
+    <div class="chip" onclick="goto('s-vars')">📦 Variables</div>
+    <div class="chip" onclick="goto('s-ds')">🗃️ Data Structures</div>
+    <div class="chip" onclick="goto('s-files')">📁 File Handling</div>
+    <div class="chip" onclick="goto('s-builtin')">🔧 Modules</div>
+    <div class="chip" onclick="goto('s-numpy')">🔢 NumPy</div>
+    <div class="chip" onclick="goto('s-pandas')">🐼 Pandas</div>
+    <div class="chip" onclick="goto('s-matplotlib')">📊 Matplotlib</div>
+    <div class="chip" onclick="goto('s-sandbox')">🧪 Sandbox</div>
+  </div>
+  <div class="hero-stats">
+    <div class="hstat"><div class="hstat-n">13</div><div class="hstat-l">Topics</div></div>
+    <div class="hstat"><div class="hstat-n">20+</div><div class="hstat-l">Code Labs</div></div>
+    <div class="hstat"><div class="hstat-n">▶</div><div class="hstat-l">Live Code</div></div>
+  </div>
+</section>
+
+<!-- ═══ VARIABLES ═══ -->
+<section class="section reveal" id="s-vars">
+  <div class="section-eyebrow"><span class="sec-num">01</span><span class="sec-tag">Foundation</span></div>
+  <h2>Variables & <em>Data Types</em></h2>
+  <p class="sec-intro">The building blocks of every Python program — and every ML dataset. Every column in a CSV file maps to one of these four core types.</p>
+  <div class="teacher"><div class="t-av">👨‍🏫</div><div><div class="t-name">Prof. Trainer</div><div class="t-role">// Python & AI Instructor</div><p class="t-speech">"Think of a variable as a <strong>labelled box in memory</strong>. Python is dynamically typed — you don't declare the type, Python figures it out. Use <code>type()</code> to check anytime."</p></div></div>
+  <div class="tbl-wrap"><table><tr><th>Type</th><th>Example</th><th>ML Use Case</th></tr><tr><td>int</td><td>age = 20</td><td>Whole number features (count, rank)</td></tr><tr><td>float</td><td>score = 8.75</td><td>Decimal features (price, accuracy)</td></tr><tr><td>str</td><td>name = "Priya"</td><td>Categorical labels, text data</td></tr><tr><td>bool</td><td>passed = True</td><td>Binary target variable (0/1, Yes/No)</td></tr></table></div>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">variables.py</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># ── Student record — mirrors an ML dataset row ──</span>
+name        = <span class="str">"Priya Sharma"</span>   <span class="cm"># str  — text feature</span>
+age         = <span class="num">20</span>               <span class="cm"># int  — numerical feature</span>
+cgpa        = <span class="num">8.75</span>             <span class="cm"># float — continuous feature</span>
+is_enrolled = <span class="kw">True</span>             <span class="cm"># bool — binary label</span>
+
+<span class="fn">print</span>(<span class="fn">type</span>(name), <span class="fn">type</span>(age), <span class="fn">type</span>(cgpa), <span class="fn">type</span>(is_enrolled))
+<span class="cm"># &lt;class 'str'&gt; &lt;class 'int'&gt; &lt;class 'float'&gt; &lt;class 'bool'&gt;</span>
+
+<span class="cm"># Type conversion — essential in ML data preprocessing</span>
+val = <span class="str">"95"</span>
+<span class="fn">print</span>(<span class="fn">int</span>(val) + <span class="num">5</span>)   <span class="cm"># 100 — string → int</span></pre></div></div>
+  <div class="callout"><span class="callout-i">🤖</span><div><strong>AI/ML Link —</strong> In Machine Learning, every row of your dataset has features (columns). Each feature has a data type — exactly what you just learned. Knowing types is Step 1 of data preprocessing.</div></div>
+  <div class="quiz"><div class="quiz-label">🙋 Check</div><div class="quiz-q">If you write <code>x = "25"</code>, what is <code>type(x)</code>?</div><div class="quiz-opts"><div class="qopt" onclick="qa(this,false,'q1')"><span class="qopt-l">A</span>int — 25 is a number</div><div class="qopt" onclick="qa(this,true,'q1')"><span class="qopt-l">B</span>str — quotes make it a string</div><div class="qopt" onclick="qa(this,false,'q1')"><span class="qopt-l">C</span>float — could be decimal</div></div><div class="quiz-fb" id="q1-fb"></div></div>
+</section>
+
+<!-- ═══ I/O ═══ -->
+<section class="section reveal" id="s-io">
+  <div class="section-eyebrow"><span class="sec-num">02</span><span class="sec-tag green">Core</span></div>
+  <h2>Input & <em>Output</em></h2>
+  <p class="sec-intro">How your program communicates with users. In AI, think of input as data fed into a model, and output as the prediction returned.</p>
+  <div class="teacher"><div class="t-av">👨‍🏫</div><div><div class="t-name">Prof. Trainer</div><div class="t-role">// Python & AI Instructor</div><p class="t-speech">"Critical rule everyone: <strong>input() ALWAYS returns a string.</strong> This causes 90% of beginner bugs. Always convert it before doing math!"</p></div></div>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">io_demo.py</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># Basic input — always returns str!</span>
+name  = <span class="fn">input</span>(<span class="str">"Enter name: "</span>)
+marks = <span class="fn">int</span>(<span class="fn">input</span>(<span class="str">"Enter marks: "</span>))  <span class="cm"># convert to int</span>
+gpa   = <span class="fn">float</span>(<span class="fn">input</span>(<span class="str">"Enter GPA: "</span>))   <span class="cm"># convert to float</span>
+
+<span class="cm"># f-string — clean, modern, professional output</span>
+<span class="fn">print</span>(<span class="str">f"Hello <span class="op">{</span>name<span class="op">}</span>! Marks: <span class="op">{</span>marks<span class="op">}</span>, GPA: <span class="op">{</span>gpa<span class="op">:.2f</span><span class="op">}</span>"</span>)
+
+<span class="cm"># Formatted output tricks</span>
+<span class="fn">print</span>(<span class="str">f"<span class="op">{</span>name<span class="op">:>20</span><span class="op">}</span>"</span>)         <span class="cm"># right-align in 20 chars</span>
+<span class="fn">print</span>(<span class="str">f"<span class="op">{</span>marks<span class="op">:05d</span><span class="op">}</span>"</span>)         <span class="cm"># pad with zeros → 00087</span>
+<span class="fn">print</span>(<span class="str">f"Score: <span class="op">{</span>marks/100*100<span class="op">:.1f</span><span class="op">}</span>%"</span>)</pre></div></div>
+  <div class="quiz"><div class="quiz-label">🙋 Check</div><div class="quiz-q">What error does <code>age = input("Age: "); print(age + 1)</code> produce?</div><div class="quiz-opts"><div class="qopt" onclick="qa(this,true,'q2')"><span class="qopt-l">A</span>TypeError — can't add str + int</div><div class="qopt" onclick="qa(this,false,'q2')"><span class="qopt-l">B</span>SyntaxError — wrong syntax</div><div class="qopt" onclick="qa(this,false,'q2')"><span class="qopt-l">C</span>No error — prints age+1</div></div><div class="quiz-fb" id="q2-fb"></div></div>
+</section>
+
+<!-- ═══ CONDITIONALS ═══ -->
+<section class="section reveal" id="s-cond">
+  <div class="section-eyebrow"><span class="sec-num">03</span><span class="sec-tag cyan">Logic</span></div>
+  <h2>Conditional <em>Statements</em></h2>
+  <p class="sec-intro">Decision-making in code. A Decision Tree in ML is literally a chain of if-elif-else checks — you already understand the core of classification!</p>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># Grade classifier — same logic as a Decision Tree node</span>
+marks = <span class="num">78</span>
+<span class="kw">if</span>   marks >= <span class="num">90</span>: grade = <span class="str">"O"</span>
+<span class="kw">elif</span> marks >= <span class="num">75</span>: grade = <span class="str">"A"</span>
+<span class="kw">elif</span> marks >= <span class="num">60</span>: grade = <span class="str">"B"</span>
+<span class="kw">elif</span> marks >= <span class="num">50</span>: grade = <span class="str">"C"</span>
+<span class="kw">else</span>:             grade = <span class="str">"F"</span>
+<span class="fn">print</span>(<span class="str">f"Grade: <span class="op">{</span>grade<span class="op">}</span>"</span>)   <span class="cm"># Grade: A</span>
+
+<span class="cm"># Ternary (one-line if-else)</span>
+status = <span class="str">"PASS"</span> <span class="kw">if</span> marks >= <span class="num">50</span> <span class="kw">else</span> <span class="str">"FAIL"</span>
+<span class="fn">print</span>(status)</pre></div></div>
+  <div class="quiz"><div class="quiz-label">🙋 Check</div><div class="quiz-q">For <code>marks = 75</code> — which block runs and why don't the others run?</div><div class="quiz-opts"><div class="qopt" onclick="qa(this,false,'q3')"><span class="qopt-l">A</span>Both >= 75 and >= 60 run (both True)</div><div class="qopt" onclick="qa(this,true,'q3')"><span class="qopt-l">B</span>Only >= 75 — Python stops at first True</div><div class="qopt" onclick="qa(this,false,'q3')"><span class="qopt-l">C</span>else block runs</div></div><div class="quiz-fb" id="q3-fb"></div></div>
+</section>
+
+<!-- ═══ LOOPS ═══ -->
+<section class="section reveal" id="s-loops">
+  <div class="section-eyebrow"><span class="sec-num">04</span><span class="sec-tag yellow">Iteration</span></div>
+  <h2>Loops — <em>for & while</em></h2>
+  <p class="sec-intro">When you train a neural network, it passes through data many times — each pass is an "epoch". That training loop is literally a for loop you're about to write.</p>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># for loop — known iterations</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">6</span>): <span class="fn">print</span>(i, end=<span class="str">" "</span>)  <span class="cm"># 1 2 3 4 5</span>
+
+subjects = [<span class="str">"Python"</span>, <span class="str">"Maths"</span>, <span class="str">"AI"</span>]
+<span class="kw">for</span> s <span class="kw">in</span> subjects: <span class="fn">print</span>(<span class="str">f"Studying {s}"</span>)
+
+<span class="cm"># enumerate — gives index + value</span>
+<span class="kw">for</span> idx, s <span class="kw">in</span> <span class="fn">enumerate</span>(subjects, <span class="num">1</span>):
+    <span class="fn">print</span>(<span class="str">f"{idx}. {s}"</span>)
+
+<span class="cm"># while loop — ML training simulation</span>
+loss = <span class="num">1000.0</span>
+epoch = <span class="num">0</span>
+<span class="kw">while</span> loss > <span class="num">1.0</span>:
+    loss *= <span class="num">0.5</span>
+    epoch += <span class="num">1</span>
+    <span class="fn">print</span>(<span class="str">f"Epoch {epoch}: loss = {loss:.3f}"</span>)
+<span class="fn">print</span>(<span class="str">"✅ Model converged!"</span>)</pre></div></div>
+  <div class="quiz"><div class="quiz-label">🙋 Check</div><div class="quiz-q">What does <code>range(2, 10, 3)</code> generate?</div><div class="quiz-opts"><div class="qopt" onclick="qa(this,false,'q4')"><span class="qopt-l">A</span>2, 4, 6, 8</div><div class="qopt" onclick="qa(this,true,'q4')"><span class="qopt-l">B</span>2, 5, 8</div><div class="qopt" onclick="qa(this,false,'q4')"><span class="qopt-l">C</span>2, 3, 5, 7, 10</div></div><div class="quiz-fb" id="q4-fb"></div></div>
+</section>
+
+<!-- ═══ FUNCTIONS ═══ -->
+<section class="section reveal" id="s-func">
+  <div class="section-eyebrow"><span class="sec-num">05</span><span class="sec-tag pink">Modular</span></div>
+  <h2>Functions — <em>Reusable Code</em></h2>
+  <p class="sec-intro">Functions are the DRY principle in action. Every ML library you'll ever use (model.fit, model.predict, df.dropna) is a function someone wrote once and shared with the world.</p>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># Basic function with return</span>
+<span class="kw">def</span> <span class="fn">predict_grade</span>(marks, threshold=<span class="num">50</span>):
+    <span class="cm">"""Returns pass/fail — like model.predict()"""</span>
+    <span class="kw">return</span> <span class="str">"PASS ✅"</span> <span class="kw">if</span> marks >= threshold <span class="kw">else</span> <span class="str">"FAIL ❌"</span>
+
+<span class="cm"># *args — variable arguments</span>
+<span class="kw">def</span> <span class="fn">average</span>(*scores):
+    <span class="kw">return</span> <span class="fn">sum</span>(scores) / <span class="fn">len</span>(scores)
+
+<span class="fn">print</span>(<span class="fn">average</span>(<span class="num">80</span>, <span class="num">75</span>, <span class="num">90</span>, <span class="num">85</span>))   <span class="cm"># 82.5</span>
+
+<span class="cm"># Lambda — anonymous function (used heavily in Pandas)</span>
+square = <span class="kw">lambda</span> x: x ** <span class="num">2</span>
+<span class="fn">print</span>(<span class="fn">square</span>(<span class="num">7</span>))                  <span class="cm"># 49</span>
+
+<span class="cm"># Simulate a mini ML pipeline</span>
+dataset = [<span class="num">72</span>, <span class="num">45</span>, <span class="num">88</span>, <span class="num">31</span>, <span class="num">95</span>]
+results = [<span class="fn">predict_grade</span>(s) <span class="kw">for</span> s <span class="kw">in</span> dataset]
+<span class="fn">print</span>(results)</pre></div></div>
+</section>
+
+<!-- ═══ DATA STRUCTURES ═══ -->
+<section class="section reveal" id="s-ds">
+  <div class="section-eyebrow"><span class="sec-num">06</span><span class="sec-tag teal">New Topic</span></div>
+  <h2>Data <em>Structures</em></h2>
+  <p class="sec-intro">Python has 4 built-in data structures. Choosing the right one is what separates a good programmer from a great one. In AI/ML, lists and dictionaries power everything from datasets to model parameters.</p>
+  <div class="teacher"><div class="t-av">👨‍🏫</div><div><div class="t-name">Prof. Trainer</div><div class="t-role">// Python & AI Instructor</div><p class="t-speech">"Here's an easy way to remember them: <strong>List = ordered shelf</strong>, <strong>Tuple = sealed box</strong>, <strong>Set = no-duplicate bag</strong>, <strong>Dict = labelled drawer</strong>. Each has its place in ML pipelines."</p></div></div>
+  <div class="info-grid">
+    <div class="info-card"><div class="info-card-icon">📋</div><div class="info-card-title">List [ ]</div><div class="info-card-body">Ordered, mutable, allows duplicates. Use for datasets, feature arrays, batch data.</div></div>
+    <div class="info-card"><div class="info-card-icon">📦</div><div class="info-card-title">Tuple ( )</div><div class="info-card-body">Ordered, immutable. Use for model dimensions like <code>(28, 28, 1)</code> for image shapes.</div></div>
+    <div class="info-card"><div class="info-card-icon">🎯</div><div class="info-card-title">Set { }</div><div class="info-card-body">Unordered, no duplicates. Use to find unique classes/labels in a dataset.</div></div>
+    <div class="info-card"><div class="info-card-icon">🗂️</div><div class="info-card-title">Dict { : }</div><div class="info-card-body">Key-value pairs. Use for model configs, hyperparameters, label mappings.</div></div>
+  </div>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">data_structures.py</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># ── LIST — your dataset rows ──</span>
+scores = [<span class="num">72</span>, <span class="num">45</span>, <span class="num">88</span>, <span class="num">31</span>, <span class="num">95</span>]
+scores.<span class="fn">append</span>(<span class="num">66</span>)            <span class="cm"># add item</span>
+scores.<span class="fn">sort</span>()               <span class="cm"># sort in place</span>
+<span class="fn">print</span>(scores[<span class="op">-</span><span class="num">1</span>])            <span class="cm"># last item → 95</span>
+<span class="fn">print</span>(scores[<span class="num">1</span>:<span class="num">4</span>])           <span class="cm"># slicing → [45, 66, 72]</span>
+
+<span class="cm"># ── TUPLE — image shape (immutable!) ──</span>
+img_shape = (<span class="num">224</span>, <span class="num">224</span>, <span class="num">3</span>)    <span class="cm"># height, width, channels</span>
+<span class="fn">print</span>(<span class="str">f"H={img_shape[0]}, W={img_shape[1]}, C={img_shape[2]}"</span>)
+
+<span class="cm"># ── SET — unique class labels ──</span>
+labels = {<span class="str">"cat"</span>, <span class="str">"dog"</span>, <span class="str">"cat"</span>, <span class="str">"bird"</span>, <span class="str">"dog"</span>}
+<span class="fn">print</span>(labels)               <span class="cm"># {'cat', 'dog', 'bird'} — no duplicates</span>
+
+<span class="cm"># ── DICT — model hyperparameters ──</span>
+model_config = {
+    <span class="str">"learning_rate"</span>: <span class="num">0.001</span>,
+    <span class="str">"epochs"</span>:         <span class="num">50</span>,
+    <span class="str">"batch_size"</span>:     <span class="num">32</span>,
+    <span class="str">"optimizer"</span>:      <span class="str">"adam"</span>
+}
+<span class="fn">print</span>(model_config[<span class="str">"learning_rate"</span>])   <span class="cm"># 0.001</span>
+model_config[<span class="str">"dropout"</span>] = <span class="num">0.3</span>          <span class="cm"># add new key</span>
+
+<span class="cm"># Dict comprehension — map labels to numbers</span>
+label_map = {label: i <span class="kw">for</span> i, label <span class="kw">in</span> <span class="fn">enumerate</span>(sorted(labels))}
+<span class="fn">print</span>(label_map)   <span class="cm"># {'bird': 0, 'cat': 1, 'dog': 2}</span></pre></div></div>
+  <div class="callout"><span class="callout-i">🤖</span><div><strong>AI/ML Link —</strong> NumPy arrays are just supercharged lists. Pandas DataFrames are supercharged dictionaries. Every ML configuration is a dict. Master these four structures and libraries become easy.</div></div>
+  <div class="quiz"><div class="quiz-label">🙋 Check</div><div class="quiz-q">Which data structure would you use to store ML model hyperparameters like learning_rate and epochs?</div><div class="quiz-opts"><div class="qopt" onclick="qa(this,false,'q5')"><span class="qopt-l">A</span>List — ordered and easy to loop</div><div class="qopt" onclick="qa(this,false,'q5')"><span class="qopt-l">B</span>Tuple — immutable, safe</div><div class="qopt" onclick="qa(this,true,'q5')"><span class="qopt-l">C</span>Dict — named key-value pairs, easy access</div></div><div class="quiz-fb" id="q5-fb"></div></div>
+  <div class="activity"><div class="act-head"><span class="act-icon">✏️</span><span class="act-title">Activity — Build a Student Database</span><span class="act-badge">Try it</span></div><div class="act-body">Create a <strong>list of dicts</strong> where each dict represents a student with keys: name, marks, passed. Loop through it and print a formatted report. This is exactly how you'll load and display a Pandas DataFrame later!</div></div>
+</section>
+
+<!-- ═══ FILE HANDLING ═══ -->
+<section class="section reveal" id="s-files">
+  <div class="section-eyebrow"><span class="sec-num">07</span><span class="sec-tag teal">New Topic</span></div>
+  <h2>File <em>Handling</em></h2>
+  <p class="sec-intro">Real-world AI models read datasets from files. Before you use Pandas to load CSVs, you need to understand the underlying file I/O Python provides.</p>
+  <div class="teacher"><div class="t-av">👨‍🏫</div><div><div class="t-name">Prof. Trainer</div><div class="t-role">// Python & AI Instructor</div><p class="t-speech">"Always use <strong>with open(...)</strong> — it automatically closes the file even if an error occurs. Forgetting to close files is a classic memory leak bug. In ML pipelines with huge datasets, this matters a lot."</p></div></div>
+  <div class="tbl-wrap"><table><tr><th>Mode</th><th>Meaning</th><th>Use Case</th></tr><tr><td>"r"</td><td>Read</td><td>Load dataset, config files</td></tr><tr><td>"w"</td><td>Write (overwrite)</td><td>Save model output, results</td></tr><tr><td>"a"</td><td>Append</td><td>Log training metrics per epoch</td></tr><tr><td>"r+"</td><td>Read + Write</td><td>Update existing records</td></tr></table></div>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">file_handling.py</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># ── WRITING a file ──</span>
+<span class="kw">with</span> <span class="fn">open</span>(<span class="str">"students.txt"</span>, <span class="str">"w"</span>) <span class="kw">as</span> f:
+    f.<span class="fn">write</span>(<span class="str">"Name,Marks,Grade\n"</span>)
+    f.<span class="fn">write</span>(<span class="str">"Priya,88,A\n"</span>)
+    f.<span class="fn">write</span>(<span class="str">"Rahul,72,B\n"</span>)
+
+<span class="cm"># ── READING a file ──</span>
+<span class="kw">with</span> <span class="fn">open</span>(<span class="str">"students.txt"</span>, <span class="str">"r"</span>) <span class="kw">as</span> f:
+    <span class="kw">for</span> line <span class="kw">in</span> f:
+        <span class="fn">print</span>(line.<span class="fn">strip</span>())     <span class="cm"># strip removes \n</span>
+
+<span class="cm"># ── APPENDING training logs ──</span>
+<span class="kw">for</span> epoch <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, <span class="num">4</span>):
+    <span class="kw">with</span> <span class="fn">open</span>(<span class="str">"training_log.txt"</span>, <span class="str">"a"</span>) <span class="kw">as</span> log:
+        log.<span class="fn">write</span>(<span class="str">f"Epoch {epoch}: loss=0.{100-epoch*20}\n"</span>)
+
+<span class="cm"># ── Reading CSV manually (before Pandas) ──</span>
+<span class="kw">import</span> csv
+<span class="kw">with</span> <span class="fn">open</span>(<span class="str">"students.txt"</span>) <span class="kw">as</span> f:
+    reader = csv.<span class="fn">DictReader</span>(f)
+    <span class="kw">for</span> row <span class="kw">in</span> reader:
+        <span class="fn">print</span>(<span class="str">f"{row['Name']} → {row['Grade']}"</span>)
+
+<span class="cm"># ── Exception handling for safe file ops ──</span>
+<span class="kw">try</span>:
+    <span class="kw">with</span> <span class="fn">open</span>(<span class="str">"missing.csv"</span>) <span class="kw">as</span> f:
+        data = f.<span class="fn">read</span>()
+<span class="kw">except</span> FileNotFoundError:
+    <span class="fn">print</span>(<span class="str">"❌ File not found! Check the path."</span>)</pre></div></div>
+  <div class="quiz"><div class="quiz-label">🙋 Check</div><div class="quiz-q">You want to add a new training epoch result to an existing log file WITHOUT deleting the old entries. Which mode do you use?</div><div class="quiz-opts"><div class="qopt" onclick="qa(this,false,'q6')"><span class="qopt-l">A</span>"w" — write mode</div><div class="qopt" onclick="qa(this,true,'q6')"><span class="qopt-l">B</span>"a" — append mode</div><div class="qopt" onclick="qa(this,false,'q6')"><span class="qopt-l">C</span>"r" — read mode</div></div><div class="quiz-fb" id="q6-fb"></div></div>
+</section>
+
+<!-- ═══ BUILT-IN MODULES ═══ -->
+<section class="section reveal" id="s-builtin">
+  <div class="section-eyebrow"><span class="sec-num">08</span><span class="sec-tag">Modules</span></div>
+  <h2>Built-in <em>Modules</em></h2>
+  <p class="sec-intro">Python ships with a rich standard library — no installation needed. These modules are used constantly in data science and AI preprocessing pipelines.</p>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">builtin_modules.py</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># ── math — mathematical operations ──</span>
+<span class="kw">import</span> math
+<span class="fn">print</span>(math.<span class="fn">sqrt</span>(<span class="num">144</span>))          <span class="cm"># 12.0</span>
+<span class="fn">print</span>(math.<span class="fn">pi</span>)                  <span class="cm"># 3.14159...</span>
+<span class="fn">print</span>(math.<span class="fn">log</span>(<span class="num">100</span>, <span class="num">10</span>))       <span class="cm"># 2.0 — log base 10</span>
+<span class="fn">print</span>(math.<span class="fn">factorial</span>(<span class="num">5</span>))       <span class="cm"># 120</span>
+
+<span class="cm"># ── random — used in ML for data splitting & initialization ──</span>
+<span class="kw">import</span> random
+<span class="fn">print</span>(random.<span class="fn">randint</span>(<span class="num">1</span>, <span class="num">100</span>))  <span class="cm"># random int</span>
+<span class="fn">print</span>(random.<span class="fn">random</span>())         <span class="cm"># float between 0 and 1</span>
+
+data = [<span class="num">10</span>, <span class="num">20</span>, <span class="num">30</span>, <span class="num">40</span>, <span class="num">50</span>]
+random.<span class="fn">shuffle</span>(data)           <span class="cm"># shuffle dataset in-place</span>
+train = random.<span class="fn">sample</span>(data, <span class="num">3</span>) <span class="cm"># pick 3 samples</span>
+
+<span class="cm"># ── os — file system & paths ──</span>
+<span class="kw">import</span> os
+<span class="fn">print</span>(os.<span class="fn">getcwd</span>())             <span class="cm"># current directory</span>
+<span class="fn">print</span>(os.path.<span class="fn">exists</span>(<span class="str">"data.csv"</span>))  <span class="cm"># check if file exists</span>
+files = os.<span class="fn">listdir</span>(<span class="str">"."</span>)       <span class="cm"># list all files</span>
+
+<span class="cm"># ── datetime — timestamp your model runs ──</span>
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+now = datetime.<span class="fn">now</span>()
+<span class="fn">print</span>(now.<span class="fn">strftime</span>(<span class="str">"%Y-%m-%d %H:%M:%S"</span>))  <span class="cm"># 2025-01-15 14:32:01</span>
+
+<span class="cm"># ── statistics — basic data analysis ──</span>
+<span class="kw">import</span> statistics
+scores = [<span class="num">72</span>, <span class="num">88</span>, <span class="num">65</span>, <span class="num">90</span>, <span class="num">78</span>]
+<span class="fn">print</span>(statistics.<span class="fn">mean</span>(scores))    <span class="cm"># 78.6</span>
+<span class="fn">print</span>(statistics.<span class="fn">stdev</span>(scores))   <span class="cm"># standard deviation</span>
+<span class="fn">print</span>(statistics.<span class="fn">median</span>(scores))  <span class="cm"># 78</span></pre></div></div>
+  <div class="activity"><div class="act-head"><span class="act-icon">✏️</span><span class="act-title">Activity — Data Splitter</span><span class="act-badge">Try it</span></div><div class="act-body">Use <code>random</code> to simulate a train/test split: given a list of 10 students, randomly split them 80% training, 20% testing. Print both groups. (Hint: use <code>random.sample()</code> and list comprehension)</div></div>
+</section>
+
+<!-- ═══ USER-DEFINED MODULES ═══ -->
+<section class="section reveal" id="s-usermod">
+  <div class="section-eyebrow"><span class="sec-num">09</span><span class="sec-tag">Packages</span></div>
+  <h2>User Modules & <em>Packages</em></h2>
+  <p class="sec-intro">When your project grows, you organise code into modules (files) and packages (folders). Every ML library you use — NumPy, Pandas, scikit-learn — is a package someone built using this exact structure.</p>
+  <div class="teacher"><div class="t-av">👨‍🏫</div><div><div class="t-name">Prof. Trainer</div><div class="t-role">// Python & AI Instructor</div><p class="t-speech">"The <strong>__init__.py</strong> file is what tells Python 'this folder is a package, not just a folder'. When you do <code>import numpy as np</code>, Python finds the numpy folder, reads __init__.py, and loads everything. Now you know how that magic works!"</p></div></div>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">utils.py — your module</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># ── FILE: utils.py ──</span>
+<span class="cm"># This is your custom module</span>
+
+<span class="kw">def</span> <span class="fn">normalize</span>(value, min_val, max_val):
+    <span class="cm">"""Min-Max normalization — used in ML preprocessing"""</span>
+    <span class="kw">return</span> (value - min_val) / (max_val - min_val)
+
+<span class="kw">def</span> <span class="fn">accuracy</span>(correct, total):
+    <span class="cm">"""Calculate model accuracy"""</span>
+    <span class="kw">return</span> <span class="fn">round</span>((correct / total) * <span class="num">100</span>, <span class="num">2</span>)
+
+PASS_MARK = <span class="num">50</span>
+VERSION   = <span class="str">"1.0.0"</span></pre></div></div>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">main.py — using your module</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="cm"># ── FILE: main.py ──</span>
+<span class="kw">import</span> utils                         <span class="cm"># import whole module</span>
+<span class="kw">from</span> utils <span class="kw">import</span> normalize, accuracy  <span class="cm"># import specific functions</span>
+
+score = <span class="num">75</span>
+norm  = <span class="fn">normalize</span>(score, <span class="num">0</span>, <span class="num">100</span>)
+<span class="fn">print</span>(<span class="str">f"Normalized: {norm}"</span>)          <span class="cm"># 0.75</span>
+<span class="fn">print</span>(<span class="fn">accuracy</span>(<span class="num">45</span>, <span class="num">50</span>))               <span class="cm"># 90.0</span>
+<span class="fn">print</span>(utils.VERSION)                   <span class="cm"># 1.0.0</span>
+
+<span class="cm">"""
+Folder structure for a package:
+ml_project/
+│── __init__.py          ← makes it a package
+│── preprocessing.py     ← your module
+│── models.py            ← your module
+│── evaluation.py        ← your module
+main.py
+
+from ml_project import preprocessing
+from ml_project.models import LinearRegression
+"""</span></pre></div></div>
+</section>
+
+<!-- ═══ NUMPY ═══ -->
+<section class="section reveal" id="s-numpy">
+  <div class="section-eyebrow"><span class="sec-num">10</span><span class="sec-tag teal">AI/ML Library</span></div>
+  <h2>NumPy — <em>Numerical Computing</em></h2>
+  <p class="sec-intro">NumPy is the foundation of all scientific computing in Python. Every matrix multiplication in a neural network, every image pixel array — it all runs on NumPy arrays. This is where Python meets Mathematics.</p>
+  <div class="teacher"><div class="t-av">👨‍🏫</div><div><div class="t-name">Prof. Trainer</div><div class="t-role">// Python & AI Instructor</div><p class="t-speech">"A NumPy array is like a Python list on steroids — 100x faster for math operations. When an image is loaded in AI, it becomes a NumPy array of shape <strong>(height, width, 3)</strong> — 3 channels for RGB. That's literally all a computer 'sees'."</p></div></div>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">numpy_basics.py</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="kw">import</span> numpy <span class="kw">as</span> np   <span class="cm"># np is the universal alias</span>
+
+<span class="cm"># ── Creating arrays ──</span>
+a = np.<span class="fn">array</span>([<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span>])
+<span class="fn">print</span>(a.shape)         <span class="cm"># (5,) — 1D array</span>
+<span class="fn">print</span>(a.dtype)         <span class="cm"># int64</span>
+
+<span class="cm"># ── 2D array — like a dataset matrix ──</span>
+X = np.<span class="fn">array</span>([[<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>],
+              [<span class="num">4</span>,<span class="num">5</span>,<span class="num">6</span>],
+              [<span class="num">7</span>,<span class="num">8</span>,<span class="num">9</span>]])
+<span class="fn">print</span>(X.shape)         <span class="cm"># (3, 3) — 3 rows, 3 features</span>
+<span class="fn">print</span>(X[<span class="num">0</span>])            <span class="cm"># first row  → [1 2 3]</span>
+<span class="fn">print</span>(X[:, <span class="num">1</span>])         <span class="cm"># second column → [2 5 8]</span>
+
+<span class="cm"># ── Array creation shortcuts ──</span>
+zeros   = np.<span class="fn">zeros</span>((<span class="num">3</span>, <span class="num">4</span>))       <span class="cm"># 3x4 matrix of 0s</span>
+ones    = np.<span class="fn">ones</span>((<span class="num">2</span>, <span class="num">3</span>))        <span class="cm"># 2x3 matrix of 1s</span>
+rng     = np.<span class="fn">arange</span>(<span class="num">0</span>, <span class="num">10</span>, <span class="num">2</span>)   <span class="cm"># [0 2 4 6 8]</span>
+random  = np.random.<span class="fn">rand</span>(<span class="num">3</span>, <span class="num">3</span>)  <span class="cm"># 3x3 random floats 0-1</span>
+
+<span class="cm"># ── Math operations (vectorized — no loop needed!) ──</span>
+scores = np.<span class="fn">array</span>([<span class="num">72</span>, <span class="num">88</span>, <span class="num">45</span>, <span class="num">95</span>, <span class="num">60</span>])
+<span class="fn">print</span>(scores * <span class="num">1.1</span>)    <span class="cm"># apply 10% bonus to all</span>
+<span class="fn">print</span>(np.<span class="fn">mean</span>(scores))  <span class="cm"># 72.0</span>
+<span class="fn">print</span>(np.<span class="fn">std</span>(scores))   <span class="cm"># standard deviation</span>
+<span class="fn">print</span>(np.<span class="fn">max</span>(scores))   <span class="cm"># 95</span>
+
+<span class="cm"># ── Min-Max normalization — critical ML preprocessing ──</span>
+norm = (scores - scores.<span class="fn">min</span>()) / (scores.<span class="fn">max</span>() - scores.<span class="fn">min</span>())
+<span class="fn">print</span>(norm)   <span class="cm"># all values between 0 and 1</span>
+
+<span class="cm"># ── Boolean masking — filter data ──</span>
+passed = scores[scores >= <span class="num">60</span>]   <span class="cm"># only scores ≥ 60</span>
+<span class="fn">print</span>(passed)                   <span class="cm"># [72 88 95 60]</span></pre></div></div>
+  <div class="callout"><span class="callout-i">🤖</span><div><strong>Why NumPy in AI? —</strong> A colour image is stored as a 3D NumPy array of shape (height, width, 3). A dataset of 1000 images becomes (1000, 224, 224, 3). Neural networks are just chains of matrix multiplications — all done by NumPy (or its GPU version, CuPy).</div></div>
+  <div class="quiz"><div class="quiz-label">🙋 Check</div><div class="quiz-q">What is the shape of a NumPy array created with <code>np.zeros((4, 5))</code>?</div><div class="quiz-opts"><div class="qopt" onclick="qa(this,false,'q7')"><span class="qopt-l">A</span>A list of 20 zeros</div><div class="qopt" onclick="qa(this,true,'q7')"><span class="qopt-l">B</span>4 rows and 5 columns of zeros</div><div class="qopt" onclick="qa(this,false,'q7')"><span class="qopt-l">C</span>A single zero repeated 4 times</div></div><div class="quiz-fb" id="q7-fb"></div></div>
+</section>
+
+<!-- ═══ PANDAS ═══ -->
+<section class="section reveal" id="s-pandas">
+  <div class="section-eyebrow"><span class="sec-num">11</span><span class="sec-tag teal">AI/ML Library</span></div>
+  <h2>Pandas — <em>Data Analysis</em></h2>
+  <p class="sec-intro">If NumPy is the math engine, Pandas is the data workshop. You load your CSV, clean dirty data, filter rows, compute statistics — all before handing it to scikit-learn. Every data scientist lives in Pandas.</p>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">pandas_basics.py</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="kw">import</span> pandas <span class="kw">as</span> pd   <span class="cm"># pd is the universal alias</span>
+
+<span class="cm"># ── Create a DataFrame (like an Excel table) ──</span>
+df = pd.<span class="fn">DataFrame</span>({
+    <span class="str">"Name"</span>   : [<span class="str">"Priya"</span>, <span class="str">"Rahul"</span>, <span class="str">"Meena"</span>, <span class="str">"Arjun"</span>],
+    <span class="str">"Marks"</span>  : [<span class="num">88</span>, <span class="num">72</span>, <span class="num">95</span>, <span class="num">45</span>],
+    <span class="str">"Subject"</span>: [<span class="str">"Python"</span>, <span class="str">"Maths"</span>, <span class="str">"AI"</span>, <span class="str">"Stats"</span>],
+    <span class="str">"Passed"</span> : [<span class="kw">True</span>, <span class="kw">True</span>, <span class="kw">True</span>, <span class="kw">False</span>]
+})
+
+<span class="cm"># ── Explore the data ──</span>
+<span class="fn">print</span>(df.<span class="fn">head</span>(<span class="num">2</span>))             <span class="cm"># first 2 rows</span>
+<span class="fn">print</span>(df.<span class="fn">shape</span>)               <span class="cm"># (4, 4) — rows, columns</span>
+<span class="fn">print</span>(df.<span class="fn">dtypes</span>)              <span class="cm"># column data types</span>
+<span class="fn">print</span>(df.<span class="fn">describe</span>())          <span class="cm"># count, mean, std, min, max</span>
+
+<span class="cm"># ── Select columns ──</span>
+<span class="fn">print</span>(df[<span class="str">"Marks"</span>])            <span class="cm"># Series (single column)</span>
+<span class="fn">print</span>(df[[<span class="str">"Name"</span>, <span class="str">"Marks"</span>]]) <span class="cm"># DataFrame (multi-column)</span>
+
+<span class="cm"># ── Filter rows — boolean masking ──</span>
+toppers  = df[df[<span class="str">"Marks"</span>] >= <span class="num">80</span>]
+<span class="fn">print</span>(toppers)
+
+<span class="cm"># ── Add a new column ──</span>
+df[<span class="str">"Grade"</span>] = df[<span class="str">"Marks"</span>].<span class="fn">apply</span>(<span class="kw">lambda</span> m: <span class="str">"A"</span> <span class="kw">if</span> m>=<span class="num">80</span> <span class="kw">else</span> (<span class="str">"B"</span> <span class="kw">if</span> m>=<span class="num">60</span> <span class="kw">else</span> <span class="str">"F"</span>))
+
+<span class="cm"># ── Group by analysis ──</span>
+avg = df.<span class="fn">groupby</span>(<span class="str">"Passed"</span>)[<span class="str">"Marks"</span>].<span class="fn">mean</span>()
+<span class="fn">print</span>(avg)
+
+<span class="cm"># ── Handle missing values ──</span>
+df2 = df.<span class="fn">copy</span>()
+df2.loc[<span class="num">1</span>, <span class="str">"Marks"</span>] = <span class="kw">None</span>    <span class="cm"># simulate missing value</span>
+<span class="fn">print</span>(df2.<span class="fn">isnull</span>().<span class="fn">sum</span>())     <span class="cm"># count missing per column</span>
+df2[<span class="str">"Marks"</span>].<span class="fn">fillna</span>(df2[<span class="str">"Marks"</span>].<span class="fn">mean</span>(), inplace=<span class="kw">True</span>)  <span class="cm"># fill with mean</span>
+
+<span class="cm"># ── Save and load CSV ──</span>
+df.<span class="fn">to_csv</span>(<span class="str">"students.csv"</span>, index=<span class="kw">False</span>)   <span class="cm"># save</span>
+df_loaded = pd.<span class="fn">read_csv</span>(<span class="str">"students.csv"</span>)   <span class="cm"># load</span></pre></div></div>
+  <div class="callout"><span class="callout-i">🐼</span><div><strong>Pandas in ML Workflow —</strong> Load CSV → df.head() to inspect → df.isnull() to find gaps → fillna() to clean → df[features] to extract X → df[target] to extract y → pass to scikit-learn. That's the real workflow you'll use every day.</div></div>
+  <div class="quiz"><div class="quiz-label">🙋 Check</div><div class="quiz-q">You have a DataFrame and want only rows where column "score" > 80. Which syntax is correct?</div><div class="quiz-opts"><div class="qopt" onclick="qa(this,false,'q8')"><span class="qopt-l">A</span><code>df.filter(score > 80)</code></div><div class="qopt" onclick="qa(this,true,'q8')"><span class="qopt-l">B</span><code>df[df["score"] > 80]</code></div><div class="qopt" onclick="qa(this,false,'q8')"><span class="qopt-l">C</span><code>df.where("score > 80")</code></div></div><div class="quiz-fb" id="q8-fb"></div></div>
+</section>
+
+<!-- ═══ MATPLOTLIB ═══ -->
+<section class="section reveal" id="s-matplotlib">
+  <div class="section-eyebrow"><span class="sec-num">12</span><span class="sec-tag teal">AI/ML Library</span></div>
+  <h2>Matplotlib — <em>Data Visualisation</em></h2>
+  <p class="sec-intro">You can't understand data you can't see. Matplotlib lets you visualise model training curves, data distributions, confusion matrices, and feature importance — the charts that tell the story behind your model's performance.</p>
+  <div class="teacher"><div class="t-av">👨‍🏫</div><div><div class="t-name">Prof. Trainer</div><div class="t-role">// Python & AI Instructor</div><p class="t-speech">"In every ML project, the first thing you do is <strong>plot your data</strong>. Is it balanced? Is there a pattern? Are there outliers? A single chart answers questions that 100 lines of statistics cannot. Learn to visualise early, visualise often."</p></div></div>
+  <div class="codeblock"><div class="cb-head"><div class="cb-dots"><div class="cb-dot"></div><div class="cb-dot"></div><div class="cb-dot"></div></div><span class="cb-lang">Python</span><span class="cb-file">matplotlib_basics.py</span><button class="cb-copy" onclick="copyCode(this)">Copy</button></div><div class="cb-body"><pre><span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+
+<span class="cm"># ── Line Plot — Training Loss Curve ──</span>
+epochs = [<span class="num">1</span>,<span class="num">2</span>,<span class="num">3</span>,<span class="num">4</span>,<span class="num">5</span>,<span class="num">6</span>,<span class="num">7</span>,<span class="num">8</span>,<span class="num">9</span>,<span class="num">10</span>]
+loss   = [<span class="num">0.9</span>,<span class="num">0.75</span>,<span class="num">0.6</span>,<span class="num">0.45</span>,<span class="num">0.35</span>,<span class="num">0.28</span>,<span class="num">0.22</span>,<span class="num">0.17</span>,<span class="num">0.13</span>,<span class="num">0.1</span>]
+acc    = [<span class="num">0.5</span>,<span class="num">0.62</span>,<span class="num">0.7</span>,<span class="num">0.77</span>,<span class="num">0.82</span>,<span class="num">0.86</span>,<span class="num">0.89</span>,<span class="num">0.91</span>,<span class="num">0.93</span>,<span class="num">0.95</span>]
+
+plt.<span class="fn">figure</span>(figsize=(<span class="num">10</span>, <span class="num">4</span>))
+plt.<span class="fn">subplot</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">1</span>)
+plt.<span class="fn">plot</span>(epochs, loss, <span class="str">'r-o'</span>, label=<span class="str">'Train Loss'</span>)
+plt.<span class="fn">title</span>(<span class="str">'Training Loss'</span>); plt.<span class="fn">xlabel</span>(<span class="str">'Epoch'</span>); plt.<span class="fn">ylabel</span>(<span class="str">'Loss'</span>)
+plt.<span class="fn">legend</span>(); plt.<span class="fn">grid</span>(<span class="kw">True</span>)
+
+plt.<span class="fn">subplot</span>(<span class="num">1</span>, <span class="num">2</span>, <span class="num">2</span>)
+plt.<span class="fn">plot</span>(epochs, acc, <span class="str">'g-s'</span>, label=<span class="str">'Accuracy'</span>)
+plt.<span class="fn">title</span>(<span class="str">'Model Accuracy'</span>); plt.<span class="fn">xlabel</span>(<span class="str">'Epoch'</span>)
+plt.<span class="fn">legend</span>(); plt.<span class="fn">grid</span>(<span class="kw">True</span>)
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ── Bar Chart — Grade Distribution ──</span>
+grades  = [<span class="str">"O"</span>, <span class="str">"A"</span>, <span class="str">"B"</span>, <span class="str">"C"</span>, <span class="str">"F"</span>]
+counts  = [<span class="num">8</span>, <span class="num">15</span>, <span class="num">12</span>, <span class="num">6</span>, <span class="num">3</span>]
+colors  = [<span class="str">"#6c63ff"</span>,<span class="str">"#00f5c4"</span>,<span class="str">"#38bdf8"</span>,<span class="str">"#fbbf24"</span>,<span class="str">"#ef4444"</span>]
+plt.<span class="fn">bar</span>(grades, counts, color=colors)
+plt.<span class="fn">title</span>(<span class="str">"Grade Distribution"</span>)
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ── Scatter Plot — marks vs attendance ──</span>
+np.random.<span class="fn">seed</span>(<span class="num">42</span>)
+attendance = np.random.<span class="fn">randint</span>(<span class="num">60</span>, <span class="num">100</span>, <span class="num">50</span>)
+marks      = attendance * <span class="num">0.8</span> + np.random.<span class="fn">normal</span>(<span class="num">10</span>, <span class="num">5</span>, <span class="num">50</span>)
+plt.<span class="fn">scatter</span>(attendance, marks, c=<span class="str">"#6c63ff"</span>, alpha=<span class="num">0.7</span>)
+plt.<span class="fn">xlabel</span>(<span class="str">"Attendance %"</span>); plt.<span class="fn">ylabel</span>(<span class="str">"Marks"</span>)
+plt.<span class="fn">title</span>(<span class="str">"Attendance vs Marks Correlation"</span>)
+plt.<span class="fn">show</span>()</pre></div></div>
+</section>
+
+<!-- ═══ AI/ML CONCEPTS ═══ -->
+<section class="section reveal" id="s-aiml">
+  <div class="section-eyebrow"><span class="sec-num">13</span><span class="sec-tag pink">Big Picture</span></div>
+  <h2>AI & ML — <em>The Landscape</em></h2>
+  <p class="sec-intro">Now that you know Python + the key libraries, let's zoom out and understand exactly what you're building towards.</p>
+  <div class="info-grid">
+    <div class="info-card"><div class="info-card-icon">🤖</div><div class="info-card-title">Artificial Intelligence</div><div class="info-card-body">Making machines simulate human-like intelligence — reasoning, language, vision. Python is the <em>#1</em> language for all AI development.</div></div>
+    <div class="info-card"><div class="info-card-icon">📈</div><div class="info-card-title">Machine Learning</div><div class="info-card-body">Subset of AI. Machines learn patterns from data without explicit rules. scikit-learn is the go-to Python library.</div></div>
+    <div class="info-card"><div class="info-card-icon">🧠</div><div class="info-card-title">Deep Learning</div><div class="info-card-body">Subset of ML using neural networks with many layers. Powers image recognition, ChatGPT. Uses TensorFlow & PyTorch.</div></div>
+    <div class="info-card"><div class="info-card-icon">📊</div><div class="info-card-title">Data Science</div><div class="info-card-body">Collect, clean, analyse and visualise data. Pandas + Matplotlib + NumPy are the core toolkit.</div></div>
+  </div>
+  <div class="callout"><span class="callout-i">🔗</span><div><strong>The Python AI Stack you now know:</strong> Variables & Types → Data Structures → File I/O → Functions → NumPy (math) → Pandas (data) → Matplotlib (visualise) → scikit-learn (train model). That is the complete beginner ML pipeline. You've learned all the building blocks!</div></div>
+</section>
+
+<!-- ═══ LIVE SANDBOX ═══ -->
+<section class="section reveal" id="s-sandbox">
+  <div class="section-eyebrow"><span class="sec-num">🧪</span><span class="sec-tag teal">Interactive</span></div>
+  <h2>Live Python <em>Notebook</em></h2>
+  <p class="sec-intro">Run real Python code right here in your browser — no installation, no setup. This is your personal classroom notebook. Edit any cell, press Run, and see the output instantly.</p>
+</section>
+
+<div class="sandbox-section" id="sandbox-box">
+  <div class="sb-sec-head">
+    <div style="font-size:22px;">🧪</div>
+    <h3>PyLearn Notebook</h3>
+    <span class="sb-sec-badge">▶ Live Python Interpreter</span>
+    <div style="margin-left:auto;font-size:12px;color:var(--muted);font-family:var(--font-code);">Powered by Pyodide</div>
+  </div>
+  <div class="sb-sec-body">
+    <div style="margin-bottom:20px;padding:14px 18px;background:rgba(0,245,196,0.05);border:1px solid rgba(0,245,196,0.15);border-radius:10px;font-size:13px;color:var(--muted);">
+      <strong style="color:var(--a2);">ℹ️ How to use:</strong> Each cell below has editable code. Click <strong>▶ Run</strong> to execute it. You can modify the code and run again. Start with Cell 1 and work downwards!
+      <div id="pyodide-status" style="margin-top:8px;font-family:var(--font-code);font-size:11px;color:var(--a4);">⏳ Loading Python runtime... (first load takes ~15s)</div>
+    </div>
+
+    <div class="sandbox-tabs">
+      <button class="stab active" onclick="switchTab('tab-basics')">📦 Basics</button>
+      <button class="stab" onclick="switchTab('tab-ds')">🗃️ Data Structures</button>
+      <button class="stab" onclick="switchTab('tab-loops')">🔁 Loops & Functions</button>
+      <button class="stab" onclick="switchTab('tab-files')">📁 File Demo</button>
+      <button class="stab" onclick="switchTab('tab-numpy')">🔢 NumPy Lab</button>
+      <button class="stab" onclick="switchTab('tab-pandas')">🐼 Pandas Lab</button>
+      <button class="stab" onclick="switchTab('tab-charts')">📊 Charts</button>
+      <button class="stab" onclick="switchTab('tab-free')">✏️ Free Code</button>
+    </div>
+
+    <!-- TAB: BASICS -->
+    <div class="stab-panel active" id="tab-basics">
+      <div class="notebook">
+        <div class="nb-topbar"><div class="nb-dots"><div class="nb-dot"></div><div class="nb-dot"></div><div class="nb-dot"></div></div><span class="nb-title">variables_and_types.py</span><span class="nb-badge">Cell 1</span></div>
+        <div class="nb-cells">
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [1]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-b1"># Variables and data types
+name = "Priya Sharma"
+age = 20
+cgpa = 8.75
+is_enrolled = True
+
+print(f"Name: {name}")
+print(f"Age: {age}, Type: {type(age).__name__}")
+print(f"CGPA: {cgpa:.2f}, Type: {type(cgpa).__name__}")
+print(f"Enrolled: {is_enrolled}")
+
+# Type conversion
+score_str = "95"
+score_int = int(score_str)
+print(f"\n'{score_str}' converted to int: {score_int + 5}")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-b1','out-b1')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-b1')">✕ Clear</button>
+              <span class="nb-hint">Tip: Edit any value and run again!</span>
+            </div>
+            <div class="nb-output" id="out-b1"></div>
+          </div>
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [2]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-b2"># Input simulation (we use a variable to simulate input)
+simulated_name = "Arjun"
+simulated_marks = 87
+
+# f-string formatting
+print(f"Hello, {simulated_name}!")
+print(f"Your marks: {simulated_marks}")
+print(f"Percentage: {simulated_marks:.1f}%")
+print(f"Status: {'PASS ✅' if simulated_marks >= 50 else 'FAIL ❌'}")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-b2','out-b2')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-b2')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-b2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: DATA STRUCTURES -->
+    <div class="stab-panel" id="tab-ds">
+      <div class="notebook">
+        <div class="nb-topbar"><div class="nb-dots"><div class="nb-dot"></div><div class="nb-dot"></div><div class="nb-dot"></div></div><span class="nb-title">data_structures.py</span><span class="nb-badge">Live Lab</span></div>
+        <div class="nb-cells">
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [1]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-ds1"># LIST operations
+subjects = ["Python", "Maths", "AI", "Statistics", "ML"]
+print("Original:", subjects)
+subjects.append("Deep Learning")
+subjects.sort()
+print("Sorted:", subjects)
+print("Sliced [1:4]:", subjects[1:4])
+print("Length:", len(subjects))
+
+# List comprehension — generate squared numbers
+squares = [x**2 for x in range(1, 8)]
+print("Squares:", squares)
+
+# Filter with comprehension
+evens = [x for x in range(1, 20) if x % 2 == 0]
+print("Evens 1-19:", evens)</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-ds1','out-ds1')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-ds1')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-ds1"></div>
+          </div>
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [2]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-ds2"># DICTIONARY — ML model hyperparameters
+model_config = {
+    "model": "RandomForest",
+    "n_estimators": 100,
+    "max_depth": 5,
+    "learning_rate": 0.01,
+    "accuracy": 0.934
+}
+
+print("=== Model Configuration ===")
+for key, value in model_config.items():
+    print(f"  {key:20}: {value}")
+
+# Update and access
+model_config["epochs"] = 50
+print(f"\nUpdated config has {len(model_config)} params")
+print(f"Best accuracy: {model_config['accuracy']*100:.1f}%")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-ds2','out-ds2')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-ds2')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-ds2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: LOOPS & FUNCTIONS -->
+    <div class="stab-panel" id="tab-loops">
+      <div class="notebook">
+        <div class="nb-topbar"><div class="nb-dots"><div class="nb-dot"></div><div class="nb-dot"></div><div class="nb-dot"></div></div><span class="nb-title">loops_functions.py</span><span class="nb-badge">Live Lab</span></div>
+        <div class="nb-cells">
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [1]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-lf1"># Simulate ML training loop
+import random
+random.seed(42)
+
+def train_epoch(epoch, loss):
+    """Simulate one training step"""
+    new_loss = loss * (0.85 + random.uniform(-0.05, 0.05))
+    accuracy = min(0.99, 1 - new_loss)
+    return new_loss, accuracy
+
+loss = 1.0
+print("=" * 45)
+print(f"{'Epoch':>6} | {'Loss':>8} | {'Accuracy':>10} | Status")
+print("=" * 45)
+
+for epoch in range(1, 11):
+    loss, acc = train_epoch(epoch, loss)
+    bar = "█" * int(acc * 10)
+    status = "✅" if acc > 0.85 else "🔄"
+    print(f"{epoch:>6} | {loss:>8.4f} | {acc:>9.1%} | {bar} {status}")
+
+print("=" * 45)
+print(f"Final accuracy: {acc:.1%}")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-lf1','out-lf1')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-lf1')">✕ Clear</button>
+              <span class="nb-hint">Try changing random.seed() value!</span>
+            </div>
+            <div class="nb-output" id="out-lf1"></div>
+          </div>
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [2]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-lf2"># Functions — Mini classifier pipeline
+def classify(score):
+    if score >= 90: return "Outstanding 🌟"
+    elif score >= 75: return "Excellent ✨"
+    elif score >= 60: return "Good 👍"
+    elif score >= 50: return "Average 📘"
+    else: return "Needs Improvement 📖"
+
+def accuracy_score(predictions, actuals):
+    correct = sum(p == a for p, a in zip(predictions, actuals))
+    return correct / len(actuals) * 100
+
+# Simulate a dataset
+dataset = [92, 48, 75, 61, 83, 39, 55, 88, 70, 45]
+grades = [classify(s) for s in dataset]
+
+print("Student Results:")
+print("-" * 35)
+for i, (score, grade) in enumerate(zip(dataset, grades), 1):
+    print(f"Student {i:2d}: {score:3d} → {grade}")
+
+passed = sum(1 for s in dataset if s >= 50)
+print(f"\nPass rate: {passed}/{len(dataset)} = {passed/len(dataset)*100:.0f}%")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-lf2','out-lf2')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-lf2')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-lf2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: FILES -->
+    <div class="stab-panel" id="tab-files">
+      <div class="notebook">
+        <div class="nb-topbar"><div class="nb-dots"><div class="nb-dot"></div><div class="nb-dot"></div><div class="nb-dot"></div></div><span class="nb-title">file_handling_demo.py</span><span class="nb-badge">Live Lab</span></div>
+        <div class="nb-cells">
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [1]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-fi1">import os
+
+# Write a CSV file in memory (simulated filesystem)
+csv_data = """Name,Marks,Subject,Passed
+Priya,88,Python,True
+Rahul,72,Maths,True
+Meena,95,AI,True
+Arjun,45,Stats,False
+Divya,81,ML,True"""
+
+# Write file
+with open("/tmp/students.csv", "w") as f:
+    f.write(csv_data)
+print("✅ File written to /tmp/students.csv")
+
+# Read file back
+print("\n📄 Reading file contents:")
+print("-" * 40)
+with open("/tmp/students.csv", "r") as f:
+    lines = f.readlines()
+    header = lines[0].strip().split(",")
+    print(f"Columns: {header}")
+    print(f"Rows: {len(lines)-1}")
+    print()
+    for line in lines[1:]:
+        parts = line.strip().split(",")
+        print(f"  {parts[0]:10} | Marks: {parts[1]:4} | {parts[2]:8} | {'✅' if parts[3]=='True' else '❌'}")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-fi1','out-fi1')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-fi1')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-fi1"></div>
+          </div>
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [2]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-fi2"># Append training logs
+import datetime
+
+print("📝 Simulating training log file...\n")
+for epoch in range(1, 6):
+    log_entry = f"[{epoch}] loss={1.0/(epoch*0.8):.4f} acc={0.5+epoch*0.09:.2f}\n"
+    with open("/tmp/training.log", "a") as log:
+        log.write(log_entry)
+
+# Read and display log
+print("Training Log:")
+print("=" * 35)
+with open("/tmp/training.log") as log:
+    for line in log:
+        print(line.strip())
+
+# File info
+size = os.path.getsize("/tmp/training.log")
+print(f"\nLog file size: {size} bytes")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-fi2','out-fi2')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-fi2')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-fi2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: NUMPY -->
+    <div class="stab-panel" id="tab-numpy">
+      <div class="notebook">
+        <div class="nb-topbar"><div class="nb-dots"><div class="nb-dot"></div><div class="nb-dot"></div><div class="nb-dot"></div></div><span class="nb-title">numpy_lab.py</span><span class="nb-badge">NumPy Lab</span></div>
+        <div class="nb-cells">
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [1]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-np1">import numpy as np
+
+# Array operations
+scores = np.array([72, 88, 45, 95, 60, 78, 82, 55, 91, 67])
+print("=== Score Analysis ===")
+print(f"Array:  {scores}")
+print(f"Shape:  {scores.shape}")
+print(f"Mean:   {np.mean(scores):.2f}")
+print(f"Std:    {np.std(scores):.2f}")
+print(f"Min:    {np.min(scores)}")
+print(f"Max:    {np.max(scores)}")
+print(f"Median: {np.median(scores):.1f}")
+
+# Min-Max Normalization (ML preprocessing!)
+norm = (scores - scores.min()) / (scores.max() - scores.min())
+print(f"\nNormalized: {np.round(norm, 2)}")
+
+# Boolean masking
+above_avg = scores[scores > np.mean(scores)]
+print(f"Above average: {above_avg}")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-np1','out-np1')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-np1')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-np1"></div>
+          </div>
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [2]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-np2">import numpy as np
+
+# 2D arrays — like a dataset matrix
+X = np.array([
+    [1, 2, 3],  # student 1 features
+    [4, 5, 6],  # student 2 features
+    [7, 8, 9],  # student 3 features
+    [2, 4, 6]   # student 4 features
+])
+
+print(f"Dataset shape: {X.shape}  (rows=students, cols=features)")
+print(f"Row 0 (student 1): {X[0]}")
+print(f"Column 1 (feature 2): {X[:, 1]}")
+print(f"Submatrix [0:2, 0:2]:\n{X[0:2, 0:2]}")
+
+# Matrix operations
+print(f"\nTranspose shape: {X.T.shape}")
+print(f"Column means: {X.mean(axis=0)}")  # mean of each feature
+print(f"Row means:    {X.mean(axis=1)}")  # mean per student</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-np2','out-np2')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-np2')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-np2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: PANDAS -->
+    <div class="stab-panel" id="tab-pandas">
+      <div class="notebook">
+        <div class="nb-topbar"><div class="nb-dots"><div class="nb-dot"></div><div class="nb-dot"></div><div class="nb-dot"></div></div><span class="nb-title">pandas_lab.py</span><span class="nb-badge">Pandas Lab</span></div>
+        <div class="nb-cells">
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [1]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-pd1">import pandas as pd
+import numpy as np
+
+# Create a realistic student dataset
+np.random.seed(42)
+n = 20
+df = pd.DataFrame({
+    "Name"      : [f"Student_{i:02d}" for i in range(1, n+1)],
+    "Marks"     : np.random.randint(35, 100, n),
+    "Attendance": np.random.randint(60, 100, n),
+    "Projects"  : np.random.randint(1, 5, n),
+})
+df["Grade"] = df["Marks"].apply(
+    lambda m: "O" if m>=90 else ("A" if m>=75 else ("B" if m>=60 else ("C" if m>=50 else "F")))
+)
+df["Passed"] = df["Marks"] >= 50
+
+print("=== Dataset Head ===")
+print(df.head(8).to_string())
+print(f"\nShape: {df.shape}")
+print(f"\nDescribe:\n{df[['Marks','Attendance','Projects']].describe().round(2)}")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-pd1','out-pd1')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-pd1')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-pd1"></div>
+          </div>
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [2]:</span><span class="cell-type-badge ctb-code">code</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-pd2">import pandas as pd
+import numpy as np
+
+# Rebuild dataset first
+np.random.seed(42)
+n = 20
+df = pd.DataFrame({
+    "Name": [f"Student_{i:02d}" for i in range(1, n+1)],
+    "Marks": np.random.randint(35, 100, n),
+    "Attendance": np.random.randint(60, 100, n),
+})
+df["Passed"] = df["Marks"] >= 50
+df["Grade"] = df["Marks"].apply(lambda m: "O" if m>=90 else ("A" if m>=75 else ("B" if m>=60 else ("C" if m>=50 else "F"))))
+
+# Analysis operations
+print("=== Top 5 Students ===")
+print(df.nlargest(5, "Marks")[["Name","Marks","Grade"]].to_string())
+
+print("\n=== Grade Distribution ===")
+grade_counts = df["Grade"].value_counts()
+for grade, count in grade_counts.items():
+    bar = "█" * count
+    print(f"  {grade}: {bar} ({count})")
+
+print(f"\n=== Pass/Fail Summary ===")
+print(df.groupby("Passed")["Marks"].agg(["count","mean","min","max"]).round(1))
+
+# Filter high performers
+elite = df[(df["Marks"] >= 80) & (df["Attendance"] >= 85)]
+print(f"\nElite students (Marks≥80, Att≥85): {len(elite)}")</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-pd2','out-pd2')">▶ Run</button>
+              <button class="nb-clear" onclick="clearOut('out-pd2')">✕ Clear</button>
+            </div>
+            <div class="nb-output" id="out-pd2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CHARTS (JS-based live charts) -->
+    <div class="stab-panel" id="tab-charts">
+      <div class="notebook">
+        <div class="nb-topbar"><div class="nb-dots"><div class="nb-dot"></div><div class="nb-dot"></div><div class="nb-dot"></div></div><span class="nb-title">matplotlib_visualiser.py</span><span class="nb-badge">Chart Lab</span></div>
+        <div class="nb-cells">
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">📊</span><span class="cell-type-badge ctb-md">Visual</span></div>
+            <div style="padding:0 18px 18px;">
+              <p style="font-size:13px;color:var(--muted);margin-bottom:16px;">Interactive chart demos — these visualise what your Matplotlib code would produce. Choose a chart type:</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+                <button class="nb-run" style="background:var(--a1);" onclick="showChart('line')">📈 Training Loss</button>
+                <button class="nb-run" style="background:#059669;" onclick="showChart('bar')">📊 Grade Bar</button>
+                <button class="nb-run" style="background:#d97706;" onclick="showChart('pie')">🥧 Pie Chart</button>
+                <button class="nb-run" style="background:#db2777;" onclick="showChart('scatter')">🔵 Scatter Plot</button>
+                <button class="nb-run" style="background:#7c3aed;" onclick="showChart('histogram')">📉 Histogram</button>
+              </div>
+              <div class="chart-demo show"><canvas id="mainChart" height="260"></canvas></div>
+              <div id="chart-code" style="margin-top:16px;font-size:12px;color:var(--muted);font-family:var(--font-code);background:var(--code);padding:14px;border-radius:8px;border:1px solid var(--border);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: FREE CODE -->
+    <div class="stab-panel" id="tab-free">
+      <div class="notebook">
+        <div class="nb-topbar"><div class="nb-dots"><div class="nb-dot"></div><div class="nb-dot"></div><div class="nb-dot"></div></div><span class="nb-title">free_playground.py</span><span class="nb-badge">✏️ Write Anything</span></div>
+        <div class="nb-cells">
+          <div class="nb-cell">
+            <div class="nb-cell-head"><span class="cell-num">In [*]:</span><span class="cell-type-badge ctb-code">free</span></div>
+            <div class="nb-editor"><textarea class="nb-textarea" id="cell-free" style="min-height:220px;"># 🎉 This is your FREE sandbox — write any Python code here!
+# Try: loops, functions, data structures, math, strings...
+
+# Challenge: Write a function that checks if a number is prime
+def is_prime(n):
+    if n < 2:
+        return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0:
+            return False
+    return True
+
+# Find all primes up to 50
+primes = [n for n in range(2, 51) if is_prime(n)]
+print(f"Primes up to 50: {primes}")
+print(f"Count: {len(primes)}")
+
+# Your turn — edit this or write something new below!
+print("\n🚀 What will YOU build?")
+</textarea></div>
+            <div class="nb-run-row">
+              <button class="nb-run" onclick="runCell('cell-free','out-free')">▶ Run My Code</button>
+              <button class="nb-clear" onclick="clearOut('out-free')">✕ Clear Output</button>
+              <span class="nb-hint"><span>⌨️</span> Ctrl+Enter to run quickly</span>
+            </div>
+            <div class="nb-output" id="out-free"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ SUMMARY ═══ -->
+<section class="section reveal" id="s-summary">
+  <div class="section-eyebrow"><span class="sec-num">✅</span><span class="sec-tag">Wrap Up</span></div>
+  <h2>Session <em>Summary</em></h2>
+  <p class="sec-intro">You've completed the full Python × AI/ML workbook. Here's everything you now know:</p>
+  <div class="teacher"><div class="t-av">👨‍🏫</div><div><div class="t-name">Prof. Trainer</div><div class="t-role">// Python & AI Instructor</div><p class="t-speech">"Outstanding work today. You didn't just revise Python — you built the <strong>complete foundation for an AI/ML career</strong>. Variables → Data Structures → Files → Modules → NumPy → Pandas → Matplotlib. That's the real curriculum. Let's do final questions!"</p></div></div>
+
+  <div class="sum-grid">
+    <div class="sum-item"><div class="sum-n">01</div><div class="sum-t"><strong>Variables & Types</strong><span>int, float, str, bool — the 4 types of every ML dataset column.</span></div></div>
+    <div class="sum-item"><div class="sum-n">02</div><div class="sum-t"><strong>Input / Output</strong><span>input() always returns str. Use f-strings for professional output.</span></div></div>
+    <div class="sum-item"><div class="sum-n">03</div><div class="sum-t"><strong>Conditionals</strong><span>Python stops at first True. Decision Trees are nested if-elif.</span></div></div>
+    <div class="sum-item"><div class="sum-n">04</div><div class="sum-t"><strong>Loops</strong><span>for = known count, while = condition. Training loops are for loops.</span></div></div>
+    <div class="sum-item"><div class="sum-n">05</div><div class="sum-t"><strong>Functions</strong><span>DRY principle. return sends value back. Lambda for quick functions.</span></div></div>
+    <div class="sum-item"><div class="sum-n">06</div><div class="sum-t"><strong>Data Structures</strong><span>List, Tuple, Set, Dict — each has a specific role in ML pipelines.</span></div></div>
+    <div class="sum-item"><div class="sum-n">07</div><div class="sum-t"><strong>File Handling</strong><span>r/w/a modes, with open() pattern, CSV reading for datasets.</span></div></div>
+    <div class="sum-item"><div class="sum-n">08</div><div class="sum-t"><strong>Built-in Modules</strong><span>math, random, os, datetime, statistics — no pip install needed.</span></div></div>
+    <div class="sum-item"><div class="sum-n">09</div><div class="sum-t"><strong>User Modules</strong><span>Organise code into .py files and packages with __init__.py.</span></div></div>
+    <div class="sum-item"><div class="sum-n">10</div><div class="sum-t"><strong>NumPy</strong><span>Fast arrays, vectorised math, normalization, boolean masking.</span></div></div>
+    <div class="sum-item"><div class="sum-n">11</div><div class="sum-t"><strong>Pandas</strong><span>DataFrame, filtering, groupby, missing values, read_csv/to_csv.</span></div></div>
+    <div class="sum-item"><div class="sum-n">12</div><div class="sum-t"><strong>Matplotlib</strong><span>Line, bar, scatter, histogram, pie — visualise before you model.</span></div></div>
+  </div>
+
+  <div class="divider"></div>
+  <h3 style="font-family:var(--font-display);font-weight:900;font-size:22px;margin-bottom:22px;">🎓 Final Revision Questions</h3>
+  <div style="display:grid;gap:12px;">
+    <div class="rq"><div class="rq-num">Q1 / 7</div><div class="rq-q">What is the output of <code>print(type(3.0))</code> and why?</div><button class="rq-btn" onclick="showAns('a1')">Reveal Answer</button><div class="rq-ans" id="a1">✅ <code>&lt;class 'float'&gt;</code> — The decimal point makes Python treat 3.0 as float, even though it equals the integer 3.</div></div>
+    <div class="rq"><div class="rq-num">Q2 / 7</div><div class="rq-q">Which data structure stores key-value pairs and is used for ML model configs?</div><button class="rq-btn" onclick="showAns('a2')">Reveal Answer</button><div class="rq-ans" id="a2">✅ <strong>Dictionary { }</strong> — Uses key:value syntax. Perfect for hyperparameters: {"lr": 0.001, "epochs": 50}</div></div>
+    <div class="rq"><div class="rq-num">Q3 / 7</div><div class="rq-q">What file mode do you use to append training logs without deleting old entries?</div><button class="rq-btn" onclick="showAns('a3')">Reveal Answer</button><div class="rq-ans" id="a3">✅ Mode <strong>"a" (append)</strong> — adds to end of file. Mode "w" would wipe the file first!</div></div>
+    <div class="rq"><div class="rq-num">Q4 / 7</div><div class="rq-q">What is Min-Max Normalization and how do you do it with NumPy in one line?</div><button class="rq-btn" onclick="showAns('a4')">Reveal Answer</button><div class="rq-ans" id="a4">✅ Scales all values to range 0–1: <code>norm = (arr - arr.min()) / (arr.max() - arr.min())</code> — essential preprocessing step before training ML models.</div></div>
+    <div class="rq"><div class="rq-num">Q5 / 7</div><div class="rq-q">How do you filter a Pandas DataFrame to only show rows where marks > 80?</div><button class="rq-btn" onclick="showAns('a5')">Reveal Answer</button><div class="rq-ans" id="a5">✅ <code>df[df["marks"] &gt; 80]</code> — Boolean masking. The inner expression creates a True/False Series, the outer [] uses it to filter.</div></div>
+    <div class="rq"><div class="rq-num">Q6 / 7</div><div class="rq-q">What is the difference between a module and a package in Python?</div><button class="rq-btn" onclick="showAns('a6')">Reveal Answer</button><div class="rq-ans" id="a6">✅ A <strong>module</strong> is a single .py file. A <strong>package</strong> is a folder with multiple modules and a __init__.py file. NumPy, Pandas are packages!</div></div>
+    <div class="rq"><div class="rq-num">Q7 / 7</div><div class="rq-q">Write the output of: <code>for i in range(2, 10, 3): print(i)</code></div><button class="rq-btn" onclick="showAns('a7')">Reveal Answer</button><div class="rq-ans" id="a7">✅ Output: <strong>2 → 5 → 8</strong>. range(start=2, stop=10, step=3): starts at 2, steps by 3 each time, stops before 10.</div></div>
+  </div>
+
+  <div style="margin-top:48px;padding:36px;background:linear-gradient(135deg,rgba(108,99,255,0.08),rgba(0,245,196,0.04));border:1px solid rgba(108,99,255,0.2);border-radius:20px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">🎉</div>
+    <div style="font-family:var(--font-display);font-weight:900;font-size:26px;margin-bottom:12px;">Workbook Complete!</div>
+    <p style="color:var(--muted);font-size:15px;max-width:560px;margin:0 auto;line-height:1.8;">"You've covered <strong style='color:var(--a2)'>13 topics</strong>, worked through real code examples, used the live notebook, and answered quiz questions. You now have the full Python foundation for AI & ML. Practice every day — the code doesn't judge, it only teaches. All the best! 🚀"</p>
+    <div style="margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button class="nb-run" onclick="window.scrollTo(0,0)" style="background:var(--a1);">↑ Start Over</button>
+      <button class="nb-run" onclick="goto('s-sandbox')" style="background:#059669;">▶ Open Notebook</button>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="ft-brand">PyLearn <em>Workbook</em></div>
+  <div class="ft-note">AI & DS Dept — Semester 2 // 13 Topics // Python × AI/ML</div>
+</footer>
+
+</main>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script>
+/*
+  ROOT CAUSE FIX — Two bugs were happening together:
+
+  1. "wasm instantiation failed"
+     → cdn.jsdelivr.net/pyodide mirrors do NOT set the correct
+       MIME type (application/wasm) for .wasm files in sandboxed
+       iframes, so the browser refuses to instantiate the WASM module.
+     FIX: load from the OFFICIAL Pyodide CDN (cdn.pyodide.org) which
+          always serves .wasm with correct headers.
+
+  2. "DataCloneError: URL object could not be cloned"
+     → Pyodide's internal worker bootstrap calls
+         worker.postMessage(new URL(...))
+       The structured-clone algorithm used by postMessage() cannot
+       clone a URL object in a sandboxed context — only plain strings,
+       numbers, and plain objects are cloneable.
+     FIX: Set `indexURL` as a plain STRING (not a URL object) so
+          Pyodide never constructs a URL object for postMessage.
+          Also use loadPyodide({ indexURL: "...", packages:[] })
+          with no worker path triggered.
+
+  ADDITIONAL: numpy + pandas are loaded AFTER init via
+  pyodide.loadPackage() which uses XHR (safe), not postMessage.
+*/
+</script>
+<script>
+// ── Utility ──
+function goto(id){ document.getElementById(id).scrollIntoView({behavior:'smooth'}); }
+function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('open'); }
+
+// ── Progress bar ──
+window.addEventListener('scroll',()=>{
+  const h=document.documentElement;
+  document.getElementById('prog-fill').style.width=(window.scrollY/(h.scrollHeight-h.clientHeight)*100)+'%';
+});
+
+// ── Scroll reveal ──
+const revObs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:0.07});
+document.querySelectorAll('.reveal').forEach(el=>revObs.observe(el));
+
+// ── Active nav ──
+const navObs=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
+      const m=document.querySelector(`.sb-item[href="#${e.target.id}"]`);
+      if(m)m.classList.add('active');
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('section[id]').forEach(s=>navObs.observe(s));
+
+// ── Quiz ──
+const qfb={
+  q1:{ok:"🎉 Correct! Quotes always mean str.",no:"Not quite — quotes make it str no matter the content."},
+  q2:{ok:"🎉 Yes! TypeError — can't add str + int. Always convert input()!",no:"Remember: input() returns str always."},
+  q3:{ok:"🎉 Exactly! Python exits at the first True condition.",no:"Python goes top-to-bottom and stops at first True."},
+  q4:{ok:"🎉 Right! range(2,10,3): 2 → +3 → 5 → +3 → 8 → +3 → 11 ≥ 10 stop.",no:"Think: range(start, stop, step). Start=2, step=3."},
+  q5:{ok:"🎉 Correct! Dict is perfect for named config params.",no:"Dict uses key:value — ideal for named configurations."},
+  q6:{ok:"🎉 Yes! 'a' mode appends without erasing existing content.",no:"'w' would erase! 'a' means append."},
+  q7:{ok:"🎉 Correct! np.zeros((4,5)) makes 4 rows × 5 cols of zeros.",no:"The tuple (4,5) means rows × columns."},
+  q8:{ok:"🎉 Perfect! Boolean masking: df[df['col'] > value].",no:"The correct syntax is df[df['score'] > 80]."},
+};
+function qa(btn,isOk,id){
+  btn.parentElement.querySelectorAll('.qopt').forEach(o=>o.style.pointerEvents='none');
+  btn.classList.add(isOk?'correct':'wrong');
+  const fb=document.getElementById(id+'-fb');
+  fb.className='quiz-fb show '+(isOk?'ok':'no');
+  fb.textContent=isOk?qfb[id].ok:qfb[id].no;
+}
+function showAns(id){
+  document.getElementById(id).classList.add('show');
+  event.target.style.display='none';
+}
+
+// ── Copy code ──
+function copyCode(btn){
+  const pre=btn.closest('.codeblock').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText||pre.textContent).then(()=>{
+    btn.textContent='Copied!';btn.style.color='var(--a2)';
+    setTimeout(()=>{btn.textContent='Copy';btn.style.color='';},2000);
+  });
+}
+
+// ── Tabs ──
+function switchTab(id){
+  document.querySelectorAll('.stab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.stab').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Pyodide Python Runner ──
+let pyodide = null;
+let pyReady = false;
+
+function setStatus(html){
+  const el = document.getElementById('pyodide-status');
+  if(el) el.innerHTML = html;
+}
+
+/*
+  ROOT CAUSE OF "loadPyodide is not defined":
+  ─────────────────────────────────────────────
+  Using <script src="pyodide.js"> in HTML means the browser starts
+  fetching that file but does NOT block the next inline <script> block
+  from parsing and executing. So by the time our inline code runs and
+  calls loadPyodide(), the external file hasn't finished executing yet
+  → ReferenceError: loadPyodide is not defined.
+
+  THE FIX — Dynamic script injection with onload callback:
+  We create a <script> element in JS, set its src, and only call
+  loadPyodide() inside the onload handler — which fires AFTER the
+  external script has fully executed and loadPyodide is 100% defined.
+
+  This is the only reliable cross-browser way to sequence:
+    "external script finished" → "call function from that script"
+*/
+function loadPy(){
+  setStatus('⏳ <b>Step 1/4</b> — Loading Pyodide script…');
+
+  const script  = document.createElement('script');
+  script.src    = 'https://cdn.pyodide.org/v0.26.2/full/pyodide.js';
+  script.async  = true;  // fetch in parallel, execute when ready
+
+  // ✅ onload fires AFTER the script has fully parsed and executed.
+  //    loadPyodide is guaranteed to exist here.
+  script.onload = async function() {
+    try {
+      setStatus('⏳ <b>Step 2/4</b> — Starting Python runtime…');
+
+      // indexURL MUST be a plain string — never a URL object.
+      // Pyodide passes this value through postMessage internally.
+      // The structured-clone algorithm used by postMessage cannot
+      // clone URL objects → DataCloneError. Plain strings are safe.
+      pyodide = await loadPyodide({
+        indexURL: 'https://cdn.pyodide.org/v0.26.2/full/'
+      });
+
+      setStatus('⏳ <b>Step 3/4</b> — Loading NumPy…');
+      // Load packages one at a time AFTER init (uses XHR, not postMessage)
+      await pyodide.loadPackage('numpy');
+
+      setStatus('⏳ <b>Step 4/4</b> — Loading Pandas…');
+      await pyodide.loadPackage('pandas');
+
+      // Pre-import so first cell run is instant
+      pyodide.runPython('import sys, io, os');
+
+      pyReady = true;
+      setStatus('<span style="color:var(--green)">✅ Python 3.12 ready — NumPy &amp; Pandas loaded. All cells are live!</span>');
+
+    } catch(e) {
+      console.error('[PyLearn] Pyodide init error:', e);
+      const msg = e?.message || String(e);
+      let hint = 'Try: refresh page, use Chrome/Firefox, check internet.';
+      if(msg.includes('DataClone')) hint = 'Open this .html file directly in Chrome — not inside a sandboxed preview.';
+      if(msg.includes('wasm'))      hint = 'Browser blocked WebAssembly. Try Chrome with no extensions.';
+      if(msg.includes('NetworkError') || msg.includes('fetch')) hint = 'Network error — check your internet connection.';
+      setStatus(`<span style="color:var(--red)">⚠️ Python failed to load — ${hint}</span><br>
+        <small style="color:var(--muted);font-family:var(--font-code)">${escHtml(msg)}</small>`);
+    }
+  };
+
+  // onerror fires if the script URL itself can't be fetched (network down, wrong URL)
+  script.onerror = function() {
+    setStatus('<span style="color:var(--red)">⚠️ Could not fetch Pyodide from CDN — check your internet connection and refresh.</span>');
+  };
+
+  // Injecting into <head> triggers the fetch + execution
+  document.head.appendChild(script);
+}
+
+// Start loading as soon as DOM is ready
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', loadPy);
+} else {
+  loadPy(); // DOM already ready (script is at bottom of body)
+}
+
+// Add Ctrl+Enter shortcut
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.key==='Enter'){
+    const active=document.querySelector('.nb-textarea:focus');
+    if(active){
+      const cellId=active.id;
+      const outId='out-'+cellId.replace('cell-','');
+      runCell(cellId,outId);
+    }
+  }
+});
+
+async function runCell(cellId, outId){
+  const ta  = document.getElementById(cellId);
+  const out = document.getElementById(outId);
+  if(!ta || !out) return;
+
+  const btn = ta.closest('.nb-cell')?.querySelector('.nb-run');
+
+  if(!pyReady){
+    out.className = 'nb-output show';
+    out.innerHTML = '<span class="out-warn">⏳ Python is still loading… wait a few seconds then try again.</span>';
+    return;
+  }
+
+  if(btn){ btn.classList.add('running'); btn.textContent = '⏳ Running…'; }
+  out.className = 'nb-output show';
+  out.innerHTML = '';
+
+  const code = ta.value;
+
+  /*
+    stdout capture strategy:
+    - We use a fresh StringIO buffer every cell run
+    - We ALWAYS restore sys.stdout in a finally-equivalent:
+      capture the value BEFORE potentially failing user code throws,
+      then restore in the catch branch too.
+    - We never pass objects across the JS/Python boundary in postMessage —
+      all communication is via pyodide.runPython() return values (safe strings).
+  */
+  try {
+    // Setup capture — plain runPython (sync, no worker, no postMessage)
+    pyodide.runPython(
+      'import sys, io\n' +
+      '_pylearn_buf = io.StringIO()\n' +
+      'sys.stdout = _pylearn_buf\n' +
+      'sys.stderr = _pylearn_buf\n'
+    );
+
+    // Run user code asynchronously (handles await inside user code if needed)
+    await pyodide.runPythonAsync(code);
+
+  } catch(err) {
+    // Always restore stdout first, THEN read the partial output
+    try { pyodide.runPython('sys.stdout = sys.__stdout__\nsys.stderr = sys.__stderr__'); } catch(_){}
+    const partial = safeGetCapture();
+    renderOutput(out, partial, err);
+    if(btn){ btn.classList.remove('running'); btn.textContent = '▶ Run'; }
+    return;
+  }
+
+  // Restore stdout — plain string return value, zero postMessage involved
+  let captured = '';
+  try {
+    pyodide.runPython('sys.stdout = sys.__stdout__\nsys.stderr = sys.__stderr__');
+    captured = safeGetCapture();
+  } catch(_) {}
+
+  renderOutput(out, captured, null);
+  if(btn){ btn.classList.remove('running'); btn.textContent = '▶ Run'; }
+}
+
+function safeGetCapture(){
+  try {
+    // .getvalue() returns a plain Python str → JS string. Safe, no cloning.
+    return pyodide.runPython('_pylearn_buf.getvalue()') || '';
+  } catch(_) { return ''; }
+}
+
+function renderOutput(out, text, err){
+  out.innerHTML = '';
+  if(text && text.trim()){
+    // Split on newlines, render each line
+    text.split('\n').forEach(line => {
+      const d = document.createElement('div');
+      d.className = 'out-line';
+      d.innerHTML = `<span class="out-prefix">│</span><span class="out-val">${escHtml(line)}</span>`;
+      out.appendChild(d);
+    });
+  }
+  if(err){
+    // Extract the most readable part of the Python traceback
+    const raw = err.message || String(err);
+    // Pyodide wraps errors — grab just the last meaningful line
+    const lines = raw.split('\n').filter(l => l.trim());
+    const summary = lines[lines.length - 1] || raw;
+    const d = document.createElement('div');
+    d.innerHTML = `<span class="out-err">❌ ${escHtml(summary)}</span>`;
+    out.appendChild(d);
+    // Show full traceback collapsed
+    if(lines.length > 1){
+      const pre = document.createElement('pre');
+      pre.style.cssText = 'color:var(--red);opacity:0.6;font-size:11px;margin-top:6px;white-space:pre-wrap;';
+      pre.textContent = raw;
+      out.appendChild(pre);
+    }
+  }
+  if(!text?.trim() && !err){
+    out.innerHTML = '<span class="out-info">✓ Executed successfully (no output)</span>';
+  }
+}
+
+function clearOut(outId){
+  const el=document.getElementById(outId);
+  if(el){el.className='nb-output';el.textContent='';}
+}
+
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Charts (Chart.js demos) ──
+let mainChartInst=null;
+const chartConfigs={
+  line:{
+    type:'line',
+    data:{
+      labels:['1','2','3','4','5','6','7','8','9','10'],
+      datasets:[
+        {label:'Training Loss',data:[0.9,0.75,0.6,0.45,0.35,0.28,0.22,0.17,0.13,0.1],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.08)',tension:0.4,fill:true},
+        {label:'Accuracy',data:[0.5,0.62,0.7,0.77,0.82,0.86,0.89,0.91,0.93,0.95],borderColor:'#00f5c4',backgroundColor:'rgba(0,245,196,0.08)',tension:0.4,fill:true}
+      ]
+    },
+    options:{plugins:{title:{display:true,text:'Model Training Curves',color:'#dde1f0',font:{size:14}}},scales:{x:{title:{display:true,text:'Epoch',color:'#5a5d7a'},ticks:{color:'#5a5d7a'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#5a5d7a'},grid:{color:'rgba(255,255,255,0.05)'}}},},
+    code:"plt.plot(epochs, loss, 'r-o', label='Loss')\nplt.plot(epochs, acc, 'g-s', label='Accuracy')\nplt.title('Training Curves')\nplt.legend()\nplt.show()"
+  },
+  bar:{
+    type:'bar',
+    data:{
+      labels:['O (90-100)','A (75-89)','B (60-74)','C (50-59)','F (<50)'],
+      datasets:[{label:'Students',data:[8,15,12,6,3],backgroundColor:['#6c63ff','#00f5c4','#38bdf8','#fbbf24','#ef4444'],borderRadius:6}]
+    },
+    options:{plugins:{title:{display:true,text:'Grade Distribution',color:'#dde1f0',font:{size:14}}},scales:{x:{ticks:{color:'#5a5d7a'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#5a5d7a'},grid:{color:'rgba(255,255,255,0.05)'}}}},
+    code:"grades=['O','A','B','C','F']\ncounts=[8,15,12,6,3]\nplt.bar(grades, counts, color=['#6c63ff','#00f5c4','#38bdf8','#fbbf24','#ef4444'])\nplt.title('Grade Distribution')\nplt.show()"
+  },
+  pie:{
+    type:'pie',
+    data:{
+      labels:['Passed','Failed'],
+      datasets:[{data:[38,12],backgroundColor:['#00f5c4','#ef4444'],borderColor:'#0f1019',borderWidth:3}]
+    },
+    options:{plugins:{title:{display:true,text:'Pass/Fail Split',color:'#dde1f0',font:{size:14}},legend:{labels:{color:'#dde1f0'}}}},
+    code:"labels=['Passed','Failed']\nvalues=[38,12]\nplt.pie(values, labels=labels, colors=['green','red'], autopct='%1.0f%%')\nplt.title('Pass/Fail Split')\nplt.show()"
+  },
+  scatter:{
+    type:'scatter',
+    data:{
+      datasets:[{
+        label:'Student (Attendance vs Marks)',
+        data:Array.from({length:40},()=>({x:Math.floor(60+Math.random()*40),y:Math.floor(40+Math.random()*58)})),
+        backgroundColor:'rgba(108,99,255,0.6)',pointRadius:6
+      }]
+    },
+    options:{plugins:{title:{display:true,text:'Attendance vs Marks Correlation',color:'#dde1f0',font:{size:14}}},scales:{x:{title:{display:true,text:'Attendance %',color:'#5a5d7a'},ticks:{color:'#5a5d7a'},grid:{color:'rgba(255,255,255,0.05)'}},y:{title:{display:true,text:'Marks',color:'#5a5d7a'},ticks:{color:'#5a5d7a'},grid:{color:'rgba(255,255,255,0.05)'}}}},
+    code:"plt.scatter(attendance, marks, c='#6c63ff', alpha=0.7)\nplt.xlabel('Attendance %')\nplt.ylabel('Marks')\nplt.title('Correlation')\nplt.show()"
+  },
+  histogram:{
+    type:'bar',
+    data:{
+      labels:['30-40','41-50','51-60','61-70','71-80','81-90','91-100'],
+      datasets:[{label:'Frequency',data:[3,5,8,12,18,15,7],backgroundColor:'rgba(56,189,248,0.6)',borderColor:'#38bdf8',borderWidth:1,borderRadius:3}]
+    },
+    options:{plugins:{title:{display:true,text:'Marks Distribution (Histogram)',color:'#dde1f0',font:{size:14}}},scales:{x:{ticks:{color:'#5a5d7a'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#5a5d7a'},grid:{color:'rgba(255,255,255,0.05)'}}}},
+    code:"plt.hist(marks, bins=7, color='#38bdf8', edgecolor='white')\nplt.xlabel('Marks')\nplt.ylabel('Frequency')\nplt.title('Marks Distribution')\nplt.show()"
+  }
+};
+
+function showChart(type){
+  const cfg=chartConfigs[type];
+  if(mainChartInst) mainChartInst.destroy();
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  mainChartInst=new Chart(ctx,{
+    type:cfg.type,
+    data:cfg.data,
+    options:{...cfg.options,responsive:true,plugins:{...cfg.options.plugins,legend:{labels:{color:'#dde1f0'}}}}
+  });
+  document.getElementById('chart-code').innerHTML=
+    '<span style="color:var(--a4);"># Matplotlib equivalent code:</span>\nimport matplotlib.pyplot as plt\n'+cfg.code;
+}
+// Init with line chart
+setTimeout(()=>showChart('line'),500);
+
+</script>
+</body>
+</html>
